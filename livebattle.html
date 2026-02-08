@@ -704,7 +704,8 @@
         // Generate audio for a verse on-demand (async with polling)
         async function generateVerseAudio(verseId, verseElementId, botName) {
             try {
-                console.log(`Generating audio for ${botName} (verse ${verseId})...`);
+                console.log(`🎵 Generating audio for ${botName} (verse ${verseId})...`);
+                console.log(`   → About to call /api/generate-audio with verse_id: ${verseId}`);
 
                 // Step 1: Kick off audio generation (returns immediately)
                 const response = await fetch('/api/generate-audio', {
@@ -715,11 +716,15 @@
                     body: JSON.stringify({ verse_id: verseId })
                 });
 
+                console.log(`   → Fetch completed! Status: ${response.status}`);
+
                 if (!response.ok) {
+                    console.error(`   → Response not OK: ${response.status} ${response.statusText}`);
                     throw new Error('Audio generation request failed');
                 }
 
                 const data = await response.json();
+                console.log(`   → Response data:`, data);
 
                 // If audio was already cached, show it immediately
                 if (data.status === 'ready' && data.audio_url) {
@@ -736,7 +741,8 @@
                 throw new Error('Unexpected response from generate-audio');
 
             } catch (error) {
-                console.error('Error generating audio:', error);
+                console.error(`❌ Error generating audio for ${botName}:`, error);
+                console.error(`   → Error details:`, error.message, error.stack);
                 showAudioError(verseElementId);
             }
         }
