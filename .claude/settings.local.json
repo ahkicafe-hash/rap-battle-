@@ -49,7 +49,23 @@
       "Bash(supabase db execute:*)",
       "Bash(export VERCEL_ACCESS_TOKEN=\"d2m1NoZFffeZbzafjpTlt3UF\")",
       "Bash(git ls-tree:*)",
-      "Bash(node check-audio.js:*)"
+      "Bash(node check-audio.js:*)",
+      "Bash(node --check:*)",
+      "Bash(git diff-tree:*)",
+      "Bash(if:*)",
+      "Bash(then echo \"Still deploying...\")",
+      "Bash(else echo \"Deployment complete!\")",
+      "Bash(du:*)",
+      "Bash(xargs:*)",
+      "Bash(npm cache clean:*)",
+      "WebSearch",
+      "WebFetch(domain:replicate.com)",
+      "WebFetch(domain:www.aimodels.fyi)",
+      "Bash(printf:*)",
+      "WebFetch(domain:docs.vercel.com)",
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(tr:*)"
     ]
   }
 }

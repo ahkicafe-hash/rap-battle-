@@ -203,12 +203,23 @@
                     <div class="flex items-center justify-center gap-4">
                         <div class="text-center">
                             <div class="font-orbitron text-xl font-bold text-electric" id="bot1-name">Bot 1</div>
-                            <div class="text-sm text-slate-400" id="bot1-score">0</div>
+                            <div class="text-sm text-slate-400">Score: <span id="bot1-score">0</span></div>
                         </div>
                         <div class="font-orbitron text-2xl font-black text-slate-600">VS</div>
                         <div class="text-center">
                             <div class="font-orbitron text-xl font-bold text-hot" id="bot2-name">Bot 2</div>
-                            <div class="text-sm text-slate-400" id="bot2-score">0</div>
+                            <div class="text-sm text-slate-400">Score: <span id="bot2-score">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DJ Claudius Commentary -->
+                <div id="dj-commentary" class="mb-8 p-6 bg-gradient-to-r from-electric/10 to-hot/10 rounded-xl border border-electric/20">
+                    <div class="flex items-start gap-4">
+                        <div class="text-4xl">🎤</div>
+                        <div class="flex-1">
+                            <div class="font-orbitron text-sm font-bold text-gold mb-2">DJ CLAUDIUS</div>
+                            <p class="text-slate-300 leading-relaxed" id="dj-commentary-text">Loading commentary...</p>
                         </div>
                     </div>
                 </div>
@@ -216,6 +227,13 @@
                 <!-- Verses Container -->
                 <div id="verses-container">
                     <!-- Verses will be dynamically added here -->
+                </div>
+
+                <!-- Next Round Button -->
+                <div id="next-round-section" class="text-center mt-8 hidden">
+                    <button id="next-round-btn" class="btn-primary" onclick="loadNextRound()">
+                        Next Round →
+                    </button>
                 </div>
 
                 <!-- Winner Section -->
@@ -290,6 +308,9 @@
 
         async function loadBattle(battleId) {
             try {
+                // Hide next round button while loading
+                document.getElementById('next-round-section').classList.add('hidden');
+
                 // Try to load battle from database first
                 const { data: existingBattle, error: battleError } = await supabase
                     .from('battles')
@@ -325,131 +346,157 @@
             // Update header
             document.getElementById('bot1-name').textContent = bot1.name;
             document.getElementById('bot2-name').textContent = bot2.name;
+            document.getElementById('bot1-score').textContent = battleData.bot1_score || 0;
+            document.getElementById('bot2-score').textContent = battleData.bot2_score || 0;
+
+            // Update round title
+            const currentRound = battleData.current_round || 1;
+            document.getElementById('round-title').textContent = `Round ${currentRound}`;
+
+            // Show DJ commentary
+            if (battleData.dj_commentary) {
+                document.getElementById('dj-commentary-text').textContent = battleData.dj_commentary;
+            }
 
             // Show battle arena
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('battle-arena').classList.remove('hidden');
 
-            // Animate verses
-            await animateVerses();
+            // Clear previous verses
+            document.getElementById('verses-container').innerHTML = '';
+
+            // Display verses for current round only
+            await displayCurrentRound();
+
+            // Show appropriate action button
+            if (battleData.status === 'completed') {
+                // Show winner
+                await showWinner(battleData.bot1_score, battleData.bot2_score);
+            } else if (currentRound < 3) {
+                // Show "Next Round" button
+                document.getElementById('next-round-section').classList.remove('hidden');
+            }
         }
 
-        async function animateVerses() {
+        async function displayCurrentRound() {
             const container = document.getElementById('verses-container');
-            const verses = battleData.battle_verses || [];
+            const currentRound = battleData.current_round || 1;
 
-            // Group verses by round
-            const rounds = {};
-            verses.forEach(verse => {
-                if (!rounds[verse.round]) {
-                    rounds[verse.round] = [];
-                }
-                rounds[verse.round].push(verse);
-            });
+            // Get verses for current round only
+            const verses = (battleData.battle_verses || []).filter(v => v.round_number === currentRound);
 
-            let bot1TotalScore = 0;
-            let bot2TotalScore = 0;
+            // Display each verse
+            for (const verse of verses) {
+                const isBot1 = verse.bot_id === bot1.id;
+                const botName = isBot1 ? bot1.name : bot2.name;
 
-            // Animate each round
-            for (const roundNum of Object.keys(rounds).sort()) {
-                document.getElementById('round-title').textContent = `Round ${roundNum}`;
-
-                const roundVerses = rounds[roundNum];
-
-                // Display verses for this round
-                for (const verse of roundVerses) {
-                    const isBot1 = verse.bot_id === bot1.id;
-                    const botName = isBot1 ? bot1.name : bot2.name;
-
-                    const verseCard = document.createElement('div');
-                    verseCard.className = `verse-card ${isBot1 ? 'bot1' : 'bot2'}`;
-                    const verseId = `verse-${verse.battle_id}-${verse.round_number}-${isBot1 ? '1' : '2'}`;
-                    verseCard.innerHTML = `
-                        <div class="flex items-start justify-between mb-3">
-                            <div>
-                                <div class="font-orbitron font-bold text-lg ${isBot1 ? 'text-electric' : 'text-hot'}">${botName}</div>
-                                <div class="text-xs text-slate-500 mt-1">Round ${roundNum}</div>
-                            </div>
-                            <div class="score-badge ${getScoreClass(verse.score)}">
-                                ${verse.score}/10
-                            </div>
+                const verseCard = document.createElement('div');
+                verseCard.className = `verse-card ${isBot1 ? 'bot1' : 'bot2'}`;
+                const verseId = `verse-${verse.battle_id}-${verse.round_number}-${isBot1 ? '1' : '2'}`;
+                verseCard.innerHTML = `
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="font-orbitron font-bold text-lg ${isBot1 ? 'text-electric' : 'text-hot'}">${botName}</div>
+                            <div class="text-xs text-slate-500 mt-1">Round ${currentRound}</div>
                         </div>
-                        <p class="text-slate-300 leading-relaxed whitespace-pre-wrap mb-3">${verse.verse_text}</p>
-                        <div id="audio-container-${verseId}" class="audio-container">
-                            ${verse.audio_url && !verse.audio_url.startsWith('pending:') ? `
-                                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
-                                    <button onclick="toggleVerseAudio('${verseId}', '${verse.audio_url}')" class="verse-play-btn w-10 h-10 rounded-full bg-electric/10 hover:bg-electric/20 border border-electric/30 flex items-center justify-center transition-all" id="btn-${verseId}">
-                                        <svg class="w-4 h-4 text-electric" fill="currentColor" viewBox="0 0 24 24">
-                                            <polygon points="5,3 19,12 5,21"/>
-                                        </svg>
-                                    </button>
-                                    <div class="flex-1">
-                                        <div class="text-xs text-slate-500 font-inter">Listen to verse</div>
-                                        <div class="flex gap-1 mt-1" id="wave-${verseId}">
-                                            ${Array(20).fill(0).map((_, i) => `<span style="height:${Math.random() * 12 + 4}px" class="inline-block w-0.5 bg-electric/30 rounded"></span>`).join('')}
-                                        </div>
+                        <div class="score-badge ${getScoreClass(verse.score)}">
+                            ${verse.score}/10
+                        </div>
+                    </div>
+                    <p class="text-slate-300 leading-relaxed whitespace-pre-wrap mb-3">${verse.verse_text}</p>
+                    <div id="audio-container-${verseId}" class="audio-container">
+                        ${verse.audio_url && !verse.audio_url.startsWith('pending:') ? `
+                            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+                                <button onclick="toggleVerseAudio('${verseId}', '${verse.audio_url}')" class="verse-play-btn w-10 h-10 rounded-full bg-electric/10 hover:bg-electric/20 border border-electric/30 flex items-center justify-center transition-all" id="btn-${verseId}">
+                                    <svg class="w-4 h-4 text-electric" fill="currentColor" viewBox="0 0 24 24">
+                                        <polygon points="5,3 19,12 5,21"/>
+                                    </svg>
+                                </button>
+                                <div class="flex-1">
+                                    <div class="text-xs text-slate-500 font-inter">Listen to verse</div>
+                                    <div class="flex gap-1 mt-1" id="wave-${verseId}">
+                                        ${Array(20).fill(0).map((_, i) => `<span style="height:${Math.random() * 12 + 4}px" class="inline-block w-0.5 bg-electric/30 rounded"></span>`).join('')}
                                     </div>
                                 </div>
-                            ` : `
-                                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
-                                    <div class="w-10 h-10 rounded-full bg-electric/10 border border-electric/30 flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-electric animate-spin" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="text-xs text-slate-400 font-inter">Generating audio...</div>
-                                    </div>
+                            </div>
+                        ` : `
+                            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+                                <div class="w-10 h-10 rounded-full bg-electric/10 border border-electric/30 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-electric animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
                                 </div>
-                            `}
-                        </div>
-                    `;
+                                <div class="flex-1">
+                                    <div class="text-xs text-slate-400 font-inter">Generating audio...</div>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
 
-                    container.appendChild(verseCard);
+                container.appendChild(verseCard);
 
-                    // Animate verse appearance
-                    if (window.gsap) {
-                        gsap.to(verseCard, {
-                            opacity: 1,
-                            y: 0,
-                            duration: 0.6,
-                            ease: 'power2.out'
-                        });
-                    } else {
-                        verseCard.style.opacity = 1;
-                        verseCard.style.transform = 'translateY(0)';
-                    }
-
-                    // Generate audio if missing, or resume polling if pending (non-blocking)
-                    if (!verse.audio_url) {
-                        generateVerseAudio(verse.id, verseId, botName);
-                    } else if (verse.audio_url.startsWith('pending:')) {
-                        // A prediction is already in progress -- poll for completion
-                        pollAudioStatus(verse.id, verseId, botName);
-                    }
-
-                    // Update running score
-                    if (isBot1) {
-                        bot1TotalScore += verse.score;
-                    } else {
-                        bot2TotalScore += verse.score;
-                    }
-
-                    document.getElementById('bot1-score').textContent = bot1TotalScore;
-                    document.getElementById('bot2-score').textContent = bot2TotalScore;
-
-                    // Wait between verses
-                    await delay(2000);
+                // Animate verse appearance
+                if (window.gsap) {
+                    gsap.to(verseCard, {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.6,
+                        ease: 'power2.out'
+                    });
+                } else {
+                    verseCard.style.opacity = 1;
+                    verseCard.style.transform = 'translateY(0)';
                 }
 
-                // Wait between rounds
+                // Generate audio if missing, or resume polling if pending
+                if (!verse.audio_url) {
+                    generateVerseAudio(verse.id, verseId, botName);
+                } else if (verse.audio_url.startsWith('pending:')) {
+                    pollAudioStatus(verse.id, verseId, botName);
+                }
+
+                // Wait between verses
                 await delay(1000);
             }
-
-            // Show winner
-            await showWinner(bot1TotalScore, bot2TotalScore);
         }
+
+        async function loadNextRound() {
+            // Disable button and show loading
+            const btn = document.getElementById('next-round-btn');
+            btn.disabled = true;
+            btn.textContent = 'Generating Next Round...';
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const response = await fetch('/api/next-round', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ battle_id: battleData.id })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate next round');
+                }
+
+                const data = await response.json();
+
+                // Reload battle data
+                await loadBattle(battleData.id);
+
+            } catch (error) {
+                console.error('Error loading next round:', error);
+                alert('Failed to generate next round. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Next Round →';
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        window.loadNextRound = loadNextRound;
 
         async function showWinner(bot1Score, bot2Score) {
             const winnerSection = document.getElementById('winner-section');

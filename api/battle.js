@@ -93,6 +93,43 @@ async function judgeVerse(verse, botName, opponentName) {
 }
 
 /**
+ * Generate DJ Claudius commentary for a round
+ */
+async function generateDJCommentary(roundNum, bot1Name, bot2Name, bot1Verse, bot2Verse, bot1Score, bot2Score) {
+  const prompts = {
+    1: `You are DJ Claudius, the legendary battle rap commentator. ${bot1Name} and ${bot2Name} just opened Round 1. Write 2-3 sentences of hype commentary about their opening verses. Be energetic, witty, and set the stage for an epic battle.`,
+    2: `You are DJ Claudius. Round 2 just finished! ${bot1Name} scored ${bot1Score}/10 and ${bot2Name} scored ${bot2Score}/10. Write 2-3 sentences of commentary hyping up the momentum and tension.`,
+    3: `You are DJ Claudius. This is the FINAL ROUND! ${bot1Name} scored ${bot1Score}/10 and ${bot2Name} scored ${bot2Score}/10. Write 2-3 sentences of dramatic commentary about this climactic finale.`
+  };
+
+  const response = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are DJ Claudius, an energetic and charismatic rap battle commentator. Keep commentary exciting, concise (2-3 sentences), and focused on the action.'
+        },
+        {
+          role: 'user',
+          content: prompts[roundNum] || prompts[1]
+        }
+      ],
+      temperature: 0.9,
+      max_tokens: 100
+    })
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content.trim();
+}
+
+/**
  * Calculate ELO rating change
  */
 function calculateELO(winnerRating, loserRating, isDraw = false) {
@@ -154,96 +191,58 @@ export default async function handler(req, res) {
 
     console.log(`🎤 Battle starting: ${bot1.name} vs ${bot2.name}`);
 
-    // Battle structure: 3 rounds, each bot gets a verse per round
-    const rounds = [];
-    const allVerses = [];
+    // NEW FLOW: Only generate Round 1 initially
+    const round = 1;
+    const verseType = 'opening';
 
-    for (let round = 1; round <= 3; round++) {
-      console.log(`Round ${round}...`);
-
-      const verseType = round === 1 ? 'opening' : round === 2 ? 'comeback' : 'final';
-
-      // Bot 1 verse
-      const bot1Verse = await generateVerse(
-        bot1.name,
-        bot1.personality,
-        bot2.name,
-        verseType,
-        allVerses.filter(v => v.bot_id === bot1.id).map(v => v.verse_text)
-      );
-
-      const bot1Score = await judgeVerse(bot1Verse, bot1.name, bot2.name);
-
-      // Bot 2 verse
-      const bot2Verse = await generateVerse(
-        bot2.name,
-        bot2.personality,
-        bot1.name,
-        verseType,
-        allVerses.filter(v => v.bot_id === bot2.id).map(v => v.verse_text)
-      );
-
-      const bot2Score = await judgeVerse(bot2Verse, bot2.name, bot1.name);
-
-      rounds.push({
-        round_number: round,
-        bot1_verse: bot1Verse,
-        bot1_score: bot1Score,
-        bot2_verse: bot2Verse,
-        bot2_score: bot2Score
-      });
-
-      allVerses.push(
-        { bot_id: bot1.id, verse_text: bot1Verse, score: bot1Score, round },
-        { bot_id: bot2.id, verse_text: bot2Verse, score: bot2Score, round }
-      );
-    }
-
-    // Calculate total scores
-    const bot1TotalScore = rounds.reduce((sum, r) => sum + r.bot1_score, 0);
-    const bot2TotalScore = rounds.reduce((sum, r) => sum + r.bot2_score, 0);
-
-    // Determine winner
-    let winnerId = null;
-    let isDraw = false;
-
-    if (bot1TotalScore > bot2TotalScore) {
-      winnerId = bot1.id;
-    } else if (bot2TotalScore > bot1TotalScore) {
-      winnerId = bot2.id;
-    } else {
-      isDraw = true;
-    }
-
-    // Calculate ELO changes
-    const eloChanges = calculateELO(
-      winnerId === bot1.id ? bot1.elo_rating : bot2.elo_rating,
-      winnerId === bot2.id ? bot2.elo_rating : bot1.elo_rating,
-      isDraw
+    // Bot 1 verse
+    const bot1Verse = await generateVerse(
+      bot1.name,
+      bot1.personality,
+      bot2.name,
+      verseType,
+      []
     );
 
-    const bot1EloChange = winnerId === bot1.id ? eloChanges.winnerChange :
-                          winnerId === bot2.id ? eloChanges.loserChange :
-                          eloChanges.winnerChange;
+    const bot1Score = await judgeVerse(bot1Verse, bot1.name, bot2.name);
 
-    const bot2EloChange = winnerId === bot2.id ? eloChanges.winnerChange :
-                          winnerId === bot1.id ? eloChanges.loserChange :
-                          eloChanges.loserChange;
+    // Bot 2 verse
+    const bot2Verse = await generateVerse(
+      bot2.name,
+      bot2.personality,
+      bot1.name,
+      verseType,
+      []
+    );
 
-    // Save battle to database
+    const bot2Score = await judgeVerse(bot2Verse, bot2.name, bot1.name);
+
+    // Generate DJ Claudius commentary for Round 1
+    const djCommentary = await generateDJCommentary(
+      round,
+      bot1.name,
+      bot2.name,
+      bot1Verse,
+      bot2Verse,
+      bot1Score,
+      bot2Score
+    );
+
+    // Save battle to database (status: 'in_progress', current_round: 1)
     const { data: battle, error: battleError } = await supabase
       .from('battles')
       .insert({
         bot1_id: bot1.id,
         bot2_id: bot2.id,
-        winner_id: winnerId,
-        bot1_score: bot1TotalScore,
-        bot2_score: bot2TotalScore,
+        winner_id: null,
+        bot1_score: bot1Score,
+        bot2_score: bot2Score,
         battle_type: 'ranked',
-        status: 'completed',
+        status: 'in_progress',
+        current_round: 1,
         total_rounds: 3,
-        elo_change: Math.abs(bot1EloChange),
-        completed_at: new Date().toISOString()
+        elo_change: 0,
+        dj_commentary: djCommentary
       })
       .select()
       .single();
@@ -253,62 +252,49 @@ export default async function handler(req, res) {
       throw battleError;
     }
 
-    // Save verses (audio will be generated on-demand when viewing battle)
-    const versesToInsert = allVerses.map(v => ({
-      battle_id: battle.id,
-      bot_id: v.bot_id,
-      round_number: v.round,
-      verse_type: v.round === 1 ? 'opening' : v.round === 2 ? 'comeback' : 'final',
-      verse_text: v.verse_text,
-      score: v.score,
-      audio_url: null // Will be generated on-demand by /api/generate-audio.js
-    }));
+    // Save Round 1 verses
+    await supabase.from('battle_verses').insert([
+      {
+        battle_id: battle.id,
+        bot_id: bot1.id,
+        round_number: 1,
+        verse_type: 'opening',
+        verse_text: bot1Verse,
+        score: bot1Score,
+        audio_url: null
+      },
+      {
+        battle_id: battle.id,
+        bot_id: bot2.id,
+        round_number: 1,
+        verse_type: 'opening',
+        verse_text: bot2Verse,
+        score: bot2Score,
+        audio_url: null
+      }
+    ]);
 
-    await supabase.from('battle_verses').insert(versesToInsert);
+    console.log(`✅ Round 1 complete!`);
 
-    // Update bot stats and ELO
-    await supabase.from('bots').update({
-      elo_rating: bot1.elo_rating + bot1EloChange,
-      total_battles: bot1.total_battles + 1,
-      wins: bot1.wins + (winnerId === bot1.id ? 1 : 0),
-      losses: bot1.losses + (winnerId === bot2.id ? 1 : 0),
-      draws: bot1.draws + (isDraw ? 1 : 0)
-    }).eq('id', bot1.id);
-
-    await supabase.from('bots').update({
-      elo_rating: bot2.elo_rating + bot2EloChange,
-      total_battles: bot2.total_battles + 1,
-      wins: bot2.wins + (winnerId === bot2.id ? 1 : 0),
-      losses: bot2.losses + (winnerId === bot1.id ? 1 : 0),
-      draws: bot2.draws + (isDraw ? 1 : 0)
-    }).eq('id', bot2.id);
-
-    // TODO: Update owner stats with proper counter increment
-    // For now, skipping stats update to avoid supabase.raw() issue
-
-    console.log(`✅ Battle complete! Winner: ${winnerId ? (winnerId === bot1.id ? bot1.name : bot2.name) : 'DRAW'}`);
-
-    // Return battle results
+    // Return Round 1 results
     return res.status(200).json({
       success: true,
       battle_id: battle.id,
-      winner_id: winnerId,
-      is_draw: isDraw,
+      current_round: 1,
+      status: 'in_progress',
+      dj_commentary: djCommentary,
       bot1: {
         id: bot1.id,
         name: bot1.name,
-        score: bot1TotalScore,
-        elo_change: bot1EloChange,
-        new_elo: bot1.elo_rating + bot1EloChange
+        score: bot1Score,
+        verse: bot1Verse
       },
       bot2: {
         id: bot2.id,
         name: bot2.name,
-        score: bot2TotalScore,
-        elo_change: bot2EloChange,
-        new_elo: bot2.elo_rating + bot2EloChange
-      },
-      rounds
+        score: bot2Score,
+        verse: bot2Verse
+      }
     });
 
   } catch (error) {
