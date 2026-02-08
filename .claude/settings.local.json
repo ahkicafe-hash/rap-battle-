@@ -65,7 +65,16 @@
       "WebFetch(domain:docs.vercel.com)",
       "Bash(python3:*)",
       "WebFetch(domain:github.com)",
-      "Bash(tr:*)"
+      "Bash(tr:*)",
+      "Bash(then grep \"SUPABASE\" .env)",
+      "Bash(else echo \"No .env file found\")",
+      "Bash(supabase status:*)",
+      "Bash(ALTER TABLE battles)",
+      "Bash(ADD COLUMN IF NOT EXISTS current_round INTEGER DEFAULT 1)",
+      "Bash(__NEW_LINE_8f7120f21f23d853__)",
+      "Bash(ADD COLUMN IF NOT EXISTS dj_commentary TEXT)",
+      "Bash(__NEW_LINE_8f7120f21f23d853__ EOF)",
+      "Bash(git rm:*)"
     ]
   }
 }

@@ -56,39 +56,53 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { verse_id } = req.query;
+    const { verse_id, prediction_id } = req.query;
 
-    if (!verse_id) {
-      return res.status(400).json({ error: 'Missing verse_id query parameter' });
+    if (!verse_id && !prediction_id) {
+      return res.status(400).json({ error: 'Missing verse_id or prediction_id query parameter' });
     }
 
-    // Fetch verse from database
-    const { data: verse, error: verseError } = await supabase
-      .from('battle_verses')
-      .select('id, audio_url')
-      .eq('id', verse_id)
-      .single();
+    let predictionIdToCheck = prediction_id;
+    let shouldUpdateDB = false;
+    let verseIdForUpdate = null;
 
-    if (verseError || !verse) {
-      return res.status(404).json({ error: 'Verse not found' });
+    if (verse_id) {
+      // Mode 1: Check status for a verse (will update DB when complete)
+      const { data: verse, error: verseError } = await supabase
+        .from('battle_verses')
+        .select('id, audio_url')
+        .eq('id', verse_id)
+        .single();
+
+      if (verseError || !verse) {
+        return res.status(404).json({ error: 'Verse not found' });
+      }
+
+      // Case 1: No audio URL at all -- nothing has been requested yet
+      if (!verse.audio_url) {
+        return res.status(200).json({ status: 'no_audio' });
+      }
+
+      // Case 2: Audio is already ready (not pending)
+      if (!verse.audio_url.startsWith('pending:')) {
+        return res.status(200).json({
+          status: 'ready',
+          audio_url: verse.audio_url
+        });
+      }
+
+      // Case 3: Audio is still pending -- extract prediction ID
+      predictionIdToCheck = verse.audio_url.replace('pending:', '');
+      shouldUpdateDB = true;
+      verseIdForUpdate = verse_id;
     }
 
-    // Case 1: No audio URL at all -- nothing has been requested yet
-    if (!verse.audio_url) {
-      return res.status(200).json({ status: 'no_audio' });
+    // Check prediction status (either from verse or direct prediction_id)
+    if (!predictionIdToCheck) {
+      return res.status(400).json({ error: 'No prediction ID found' });
     }
 
-    // Case 2: Real audio URL (not a pending prediction) -- already done
-    if (!verse.audio_url.startsWith('pending:')) {
-      return res.status(200).json({
-        status: 'ready',
-        audio_url: verse.audio_url
-      });
-    }
-
-    // Case 3: Pending prediction -- check Replicate status
-    const predictionId = verse.audio_url.replace('pending:', '');
-    const prediction = await checkPrediction(predictionId);
+    const prediction = await checkPrediction(predictionIdToCheck);
 
     if (prediction.status === 'succeeded') {
       // Extract the audio URL from the prediction output
@@ -105,14 +119,16 @@ export default async function handler(req, res) {
         });
       }
 
-      // Update the database with the real audio URL
-      const { error: updateError } = await supabase
-        .from('battle_verses')
-        .update({ audio_url: audioUrl })
-        .eq('id', verse_id);
+      // Update the database if this was from a verse
+      if (shouldUpdateDB && verseIdForUpdate) {
+        const { error: updateError } = await supabase
+          .from('battle_verses')
+          .update({ audio_url: audioUrl })
+          .eq('id', verseIdForUpdate);
 
-      if (updateError) {
-        console.error('Error updating verse audio_url:', updateError);
+        if (updateError) {
+          console.error('Error updating verse audio_url:', updateError);
+        }
       }
 
       return res.status(200).json({
@@ -122,11 +138,13 @@ export default async function handler(req, res) {
     }
 
     if (prediction.status === 'failed' || prediction.status === 'canceled') {
-      // Clear the pending marker so it can be retried
-      await supabase
-        .from('battle_verses')
-        .update({ audio_url: null })
-        .eq('id', verse_id);
+      // Clear the pending marker so it can be retried (only for verses)
+      if (shouldUpdateDB && verseIdForUpdate) {
+        await supabase
+          .from('battle_verses')
+          .update({ audio_url: null })
+          .eq('id', verseIdForUpdate);
+      }
 
       return res.status(200).json({
         status: 'failed',

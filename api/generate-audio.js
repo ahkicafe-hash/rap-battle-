@@ -71,71 +71,100 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { verse_id } = req.body;
+    const { verse_id, text, voice } = req.body;
 
-    if (!verse_id) {
-      return res.status(400).json({ error: 'Missing verse_id' });
+    // Support two modes: verse_id OR direct text
+    if (!verse_id && !text) {
+      return res.status(400).json({ error: 'Missing verse_id or text' });
     }
 
-    // Fetch verse from database
-    const { data: verse, error: verseError } = await supabase
-      .from('battle_verses')
-      .select('*, battle:battles!battle_verses_battle_id_fkey(bot1_id, bot2_id), bot:bots!battle_verses_bot_id_fkey(name)')
-      .eq('id', verse_id)
-      .single();
+    let lyrics, displayName;
 
-    if (verseError || !verse) {
-      return res.status(404).json({ error: 'Verse not found' });
-    }
+    if (verse_id) {
+      // Mode 1: Generate audio for a verse from the database
+      const { data: verse, error: verseError } = await supabase
+        .from('battle_verses')
+        .select('*, battle:battles!battle_verses_battle_id_fkey(bot1_id, bot2_id), bot:bots!battle_verses_bot_id_fkey(name)')
+        .eq('id', verse_id)
+        .single();
 
-    // If audio already exists and is a real URL (not a pending prediction), return it
-    if (verse.audio_url && !verse.audio_url.startsWith('pending:')) {
-      return res.status(200).json({
-        success: true,
-        audio_url: verse.audio_url,
-        status: 'ready',
-        cached: true
-      });
-    }
+      if (verseError || !verse) {
+        return res.status(404).json({ error: 'Verse not found' });
+      }
 
-    // If a prediction is already in progress, return that status
-    if (verse.audio_url && verse.audio_url.startsWith('pending:')) {
-      const predictionId = verse.audio_url.replace('pending:', '');
-      return res.status(200).json({
+      // If audio already exists and is a real URL (not a pending prediction), return it
+      if (verse.audio_url && !verse.audio_url.startsWith('pending:')) {
+        return res.status(200).json({
+          success: true,
+          audio_url: verse.audio_url,
+          status: 'ready',
+          cached: true
+        });
+      }
+
+      // If a prediction is already in progress, return that status
+      if (verse.audio_url && verse.audio_url.startsWith('pending:')) {
+        const predictionId = verse.audio_url.replace('pending:', '');
+        return res.status(200).json({
+          success: true,
+          status: 'processing',
+          prediction_id: predictionId,
+          message: 'Audio generation already in progress. Poll /api/audio-status for updates.'
+        });
+      }
+
+      lyrics = verse.verse_text;
+      displayName = verse.bot.name;
+
+      // Create a new prediction (non-blocking)
+      console.log(`Creating audio prediction for ${displayName} (verse ${verse_id})...`);
+      const prediction = await createPrediction(lyrics, displayName);
+
+      if (!prediction.id) {
+        throw new Error('No prediction ID returned from Replicate');
+      }
+
+      console.log(`Prediction created: ${prediction.id}`);
+
+      // Store the prediction ID as a placeholder in the audio_url field
+      const { error: updateError } = await supabase
+        .from('battle_verses')
+        .update({ audio_url: `pending:${prediction.id}` })
+        .eq('id', verse_id);
+
+      if (updateError) {
+        console.error('Error storing prediction ID:', updateError);
+        // Don't throw -- the prediction is still running, just log it
+      }
+
+      return res.status(202).json({
         success: true,
         status: 'processing',
-        prediction_id: predictionId,
-        message: 'Audio generation already in progress. Poll /api/audio-status for updates.'
+        prediction_id: prediction.id,
+        message: 'Audio generation started. Poll /api/audio-status for updates.'
+      });
+
+    } else {
+      // Mode 2: Generate audio from direct text (for DJ commentary, etc.)
+      lyrics = text.substring(0, 400); // Limit to 400 chars
+      displayName = voice === 'dj-claudius' ? 'DJ Claudius' : 'Narrator';
+
+      console.log(`Creating audio prediction for ${displayName} (direct text)...`);
+      const prediction = await createPrediction(lyrics, displayName);
+
+      if (!prediction.id) {
+        throw new Error('No prediction ID returned from Replicate');
+      }
+
+      console.log(`Prediction created: ${prediction.id}`);
+
+      return res.status(202).json({
+        success: true,
+        status: 'processing',
+        prediction_id: prediction.id,
+        message: 'Audio generation started. Poll /api/audio-status for updates.'
       });
     }
-
-    // Create a new prediction (non-blocking)
-    console.log(`Creating audio prediction for ${verse.bot.name} (verse ${verse_id})...`);
-    const prediction = await createPrediction(verse.verse_text, verse.bot.name);
-
-    if (!prediction.id) {
-      throw new Error('No prediction ID returned from Replicate');
-    }
-
-    console.log(`Prediction created: ${prediction.id}`);
-
-    // Store the prediction ID as a placeholder in the audio_url field
-    const { error: updateError } = await supabase
-      .from('battle_verses')
-      .update({ audio_url: `pending:${prediction.id}` })
-      .eq('id', verse_id);
-
-    if (updateError) {
-      console.error('Error storing prediction ID:', updateError);
-      // Don't throw -- the prediction is still running, just log it
-    }
-
-    return res.status(202).json({
-      success: true,
-      status: 'processing',
-      prediction_id: prediction.id,
-      message: 'Audio generation started. Poll /api/audio-status for updates.'
-    });
 
   } catch (error) {
     console.error('Audio generation error:', error);
