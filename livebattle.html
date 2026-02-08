@@ -362,6 +362,7 @@
 
                     const verseCard = document.createElement('div');
                     verseCard.className = `verse-card ${isBot1 ? 'bot1' : 'bot2'}`;
+                    const verseId = `verse-${verse.battle_id}-${verse.round_number}-${isBot1 ? '1' : '2'}`;
                     verseCard.innerHTML = `
                         <div class="flex items-start justify-between mb-3">
                             <div>
@@ -372,7 +373,22 @@
                                 ${verse.score}/10
                             </div>
                         </div>
-                        <p class="text-slate-300 leading-relaxed whitespace-pre-wrap">${verse.verse_text}</p>
+                        <p class="text-slate-300 leading-relaxed whitespace-pre-wrap mb-3">${verse.verse_text}</p>
+                        ${verse.audio_url ? `
+                            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+                                <button onclick="toggleVerseAudio('${verseId}', '${verse.audio_url}')" class="verse-play-btn w-10 h-10 rounded-full bg-electric/10 hover:bg-electric/20 border border-electric/30 flex items-center justify-center transition-all" id="btn-${verseId}">
+                                    <svg class="w-4 h-4 text-electric" fill="currentColor" viewBox="0 0 24 24">
+                                        <polygon points="5,3 19,12 5,21"/>
+                                    </svg>
+                                </button>
+                                <div class="flex-1">
+                                    <div class="text-xs text-slate-500 font-inter">Listen to verse</div>
+                                    <div class="flex gap-1 mt-1" id="wave-${verseId}">
+                                        ${Array(20).fill(0).map((_, i) => `<span style="height:${Math.random() * 12 + 4}px" class="inline-block w-0.5 bg-electric/30 rounded"></span>`).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
                     `;
 
                     container.appendChild(verseCard);
@@ -499,6 +515,56 @@
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
+
+        // Audio player for verses
+        let currentAudio = null;
+        let currentButton = null;
+
+        window.toggleVerseAudio = function(verseId, audioUrl) {
+            const button = document.getElementById(`btn-${verseId}`);
+            const icon = button.querySelector('svg');
+
+            // If clicking the same verse, pause it
+            if (currentAudio && currentButton === button) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                icon.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+                currentAudio = null;
+                currentButton = null;
+                return;
+            }
+
+            // Stop any currently playing audio
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                if (currentButton) {
+                    const prevIcon = currentButton.querySelector('svg');
+                    prevIcon.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+                }
+            }
+
+            // Play new audio
+            const audio = new Audio(audioUrl);
+            audio.play().catch(err => {
+                console.error('Error playing audio:', err);
+                alert('Failed to play audio. The file may not be ready yet.');
+                icon.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+            });
+
+            // Update icon to pause
+            icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+
+            // When audio ends, reset button
+            audio.onended = function() {
+                icon.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+                currentAudio = null;
+                currentButton = null;
+            };
+
+            currentAudio = audio;
+            currentButton = button;
+        };
     </script>
 </body>
 </html>

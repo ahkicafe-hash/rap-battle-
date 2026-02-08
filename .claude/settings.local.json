@@ -46,7 +46,9 @@
       "Bash(PGPASSWORD=\"rinpA5-cajwim-digset\" psql:*)",
       "Bash(export SUPABASE_ACCESS_TOKEN:*)",
       "Bash(supabase projects list:*)",
-      "Bash(supabase db execute:*)"
+      "Bash(supabase db execute:*)",
+      "Bash(export VERCEL_ACCESS_TOKEN=\"d2m1NoZFffeZbzafjpTlt3UF\")",
+      "Bash(git ls-tree:*)"
     ]
   }
 }

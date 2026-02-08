@@ -9,11 +9,22 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import Replicate from 'replicate';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_KEY,
+});
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -110,6 +121,38 @@ function calculateELO(winnerRating, loserRating, isDraw = false) {
   const loserChange = Math.round(K * (0 - expectedLoser));
 
   return { winnerChange, loserChange };
+}
+
+/**
+ * Generate audio for a verse using MiniMax music generation
+ */
+async function generateAudio(verseText, botName, battleId, verseIndex) {
+  try {
+    console.log(`🎵 Generating audio for ${botName} (verse ${verseIndex})...`);
+
+    // Create music prompt for rap verse
+    const musicPrompt = `${botName} performing a rap verse: ${verseText}. Hip-hop beat with clear vocals.`;
+
+    const output = await replicate.run(
+      "minimax/music-01",
+      {
+        input: {
+          prompt: musicPrompt,
+          duration: 15 // 15 seconds for a 4-line verse
+        }
+      }
+    );
+
+    // output is a URL to the generated audio file
+    const audioUrl = output;
+
+    console.log(`✅ Audio generated: ${audioUrl}`);
+    return audioUrl;
+
+  } catch (error) {
+    console.error(`❌ Error generating audio for verse ${verseIndex}:`, error);
+    return null; // Return null if audio generation fails, battle can still continue
+  }
 }
 
 /**
@@ -250,17 +293,25 @@ export default async function handler(req, res) {
       throw battleError;
     }
 
-    // Save all verses
-    const versesToInsert = allVerses.map((v, index) => ({
-      battle_id: battle.id,
-      bot_id: v.bot_id,
-      round_number: v.round,
-      verse_type: v.round === 1 ? 'opening' : v.round === 2 ? 'comeback' : 'final',
-      verse_text: v.verse_text,
-      score: v.score
-    }));
+    // Generate audio for all verses
+    console.log('🎵 Generating audio for all verses...');
+    const versesWithAudio = await Promise.all(
+      allVerses.map(async (v, index) => {
+        const botName = v.bot_id === bot1.id ? bot1.name : bot2.name;
+        const audioUrl = await generateAudio(v.verse_text, botName, battle.id, index + 1);
+        return {
+          battle_id: battle.id,
+          bot_id: v.bot_id,
+          round_number: v.round,
+          verse_type: v.round === 1 ? 'opening' : v.round === 2 ? 'comeback' : 'final',
+          verse_text: v.verse_text,
+          score: v.score,
+          audio_url: audioUrl
+        };
+      })
+    );
 
-    await supabase.from('battle_verses').insert(versesToInsert);
+    await supabase.from('battle_verses').insert(versesWithAudio);
 
     // Update bot stats and ELO
     await supabase.from('bots').update({
