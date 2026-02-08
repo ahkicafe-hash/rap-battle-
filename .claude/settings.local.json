@@ -75,7 +75,9 @@
       "Bash(ADD COLUMN IF NOT EXISTS dj_commentary TEXT)",
       "Bash(__NEW_LINE_8f7120f21f23d853__ EOF)",
       "Bash(git rm:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "WebFetch(domain:itsourcecode.com)",
+      "WebFetch(domain:www.freecodecamp.org)"
     ]
   }
 }

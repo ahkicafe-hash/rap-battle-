@@ -214,7 +214,7 @@
                 </div>
 
                 <!-- DJ Claudius Commentary (Audio First) -->
-                <div id="dj-commentary" class="mb-8 p-6 bg-gradient-to-r from-gold/20 to-gold/10 rounded-xl border-2 border-gold/30 shadow-lg shadow-gold/10">
+                <div id="dj-commentary" class="mb-8 p-6 bg-gradient-to-r from-gold/20 to-gold/10 rounded-xl border-2 border-gold/30 shadow-lg shadow-gold/10 relative z-10">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <div class="text-4xl animate-pulse">🎤</div>
@@ -223,8 +223,10 @@
                                 <div class="text-xs text-gold/60">Round Commentary</div>
                             </div>
                         </div>
-                        <button id="dj-transcript-toggle" class="text-xs text-gold/60 hover:text-gold transition-colors" onclick="toggleDJTranscript()">
-                            View Transcript ↓
+                        <button id="dj-transcript-toggle"
+                                class="relative z-20 px-3 py-2 text-sm text-gold/80 hover:text-gold bg-gold/10 hover:bg-gold/20 rounded-lg border border-gold/30 transition-all cursor-pointer font-semibold"
+                                type="button">
+                            <span id="dj-transcript-toggle-text">View Transcript ↓</span>
                         </button>
                     </div>
 
@@ -558,19 +560,30 @@
 
         window.loadNextRound = loadNextRound;
 
-        // Toggle DJ transcript visibility
-        window.toggleDJTranscript = function() {
+        // Toggle DJ transcript visibility (using addEventListener for reliability)
+        function setupDJTranscriptToggle() {
+            const toggleBtn = document.getElementById('dj-transcript-toggle');
             const transcript = document.getElementById('dj-transcript');
-            const toggle = document.getElementById('dj-transcript-toggle');
+            const toggleText = document.getElementById('dj-transcript-toggle-text');
 
-            if (transcript.classList.contains('hidden')) {
-                transcript.classList.remove('hidden');
-                toggle.textContent = 'Hide Transcript ↑';
-            } else {
-                transcript.classList.add('hidden');
-                toggle.textContent = 'View Transcript ↓';
-            }
-        };
+            if (!toggleBtn || !transcript) return;
+
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (transcript.classList.contains('hidden')) {
+                    transcript.classList.remove('hidden');
+                    toggleText.textContent = 'Hide Transcript ↑';
+                } else {
+                    transcript.classList.add('hidden');
+                    toggleText.textContent = 'View Transcript ↓';
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', setupDJTranscriptToggle);
 
         // Toggle verse lyrics visibility
         window.toggleLyrics = function(verseId) {
