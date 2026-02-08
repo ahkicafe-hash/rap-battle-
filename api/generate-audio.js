@@ -38,7 +38,7 @@ async function createPrediction(verseText, botName) {
       'Prefer': 'respond-async'
     },
     body: JSON.stringify({
-      version: 'minimax/music-01',
+      model: 'minimax/music-01',
       input: {
         prompt: musicPrompt,
         duration: 15
