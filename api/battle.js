@@ -279,18 +279,8 @@ export default async function handler(req, res) {
       draws: bot2.draws + (isDraw ? 1 : 0)
     }).eq('id', bot2.id);
 
-    // Update owner stats
-    await supabase.from('users').update({
-      total_battles: bot1.owner_id === bot2.owner_id ?
-        supabase.raw('total_battles + 1') :
-        supabase.raw('total_battles + 1')
-    }).eq('id', bot1.owner_id);
-
-    if (bot1.owner_id !== bot2.owner_id) {
-      await supabase.from('users').update({
-        total_battles: supabase.raw('total_battles + 1')
-      }).eq('id', bot2.owner_id);
-    }
+    // TODO: Update owner stats with proper counter increment
+    // For now, skipping stats update to avoid supabase.raw() issue
 
     console.log(`✅ Battle complete! Winner: ${winnerId ? (winnerId === bot1.id ? bot1.name : bot2.name) : 'DRAW'}`);
 
