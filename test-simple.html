@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+  <h1 class="text-3xl mb-4">Simple Supabase Test</h1>
+
+  <div class="bg-black p-4 rounded mb-4">
+    <h3 class="text-green-400 mb-2">Console:</h3>
+    <div id="output" class="text-gray-400 font-mono text-sm"></div>
+  </div>
+
+  <button onclick="testConnection()" class="bg-blue-600 px-6 py-3 rounded font-bold">
+    Test Supabase Connection
+  </button>
+
+  <button onclick="createBot()" class="bg-green-600 px-6 py-3 rounded font-bold ml-2">
+    Create One Bot
+  </button>
+
+  <script>
+    const output = document.getElementById('output');
+
+    function log(msg) {
+      output.innerHTML += msg + '<br>';
+      console.log(msg);
+    }
+
+    log('✓ Page loaded');
+
+    // Initialize Supabase
+    let supabase;
+    try {
+      supabase = window.supabase.createClient(
+        'https://fwunwkiejqkrldvsubgf.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
+      );
+      log('✓ Supabase client created');
+    } catch (e) {
+      log('❌ Error: ' + e.message);
+    }
+
+    async function testConnection() {
+      log('Testing connection...');
+      try {
+        const { data, error } = await supabase.from('users').select('count');
+        if (error) {
+          log('❌ Error: ' + error.message);
+        } else {
+          log('✅ Connected! Found users.');
+        }
+      } catch (e) {
+        log('❌ Exception: ' + e.message);
+      }
+    }
+
+    async function createBot() {
+      log('Creating bot...');
+      try {
+        // First create a user
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .insert({
+            email: 'simple-test@test.com',
+            username: 'SimpleTest',
+            credits: 1000,
+            elo_rating: 1000
+          })
+          .select()
+          .single();
+
+        if (userError && !userError.message.includes('duplicate')) {
+          log('❌ User error: ' + userError.message);
+          return;
+        }
+
+        const userId = user?.id || (await supabase.from('users').select('id').eq('email', 'simple-test@test.com').single()).data.id;
+        log('✓ User ID: ' + userId);
+
+        // Create bot
+        const { data: bot, error: botError } = await supabase
+          .from('bots')
+          .insert({
+            owner_id: userId,
+            name: 'TestBot',
+            personality: 'friendly',
+            elo_rating: 1000
+          })
+          .select()
+          .single();
+
+        if (botError) {
+          log('❌ Bot error: ' + botError.message);
+          return;
+        }
+
+        log('✅ Bot created! ID: ' + bot.id);
+
+      } catch (e) {
+        log('❌ Exception: ' + e.message);
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>
