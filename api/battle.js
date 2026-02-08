@@ -9,22 +9,11 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import Replicate from 'replicate';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_KEY,
-});
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -123,65 +112,8 @@ function calculateELO(winnerRating, loserRating, isDraw = false) {
   return { winnerChange, loserChange };
 }
 
-/**
- * Generate audio for a verse using MiniMax music generation
- */
-async function generateAudio(verseText, botName, battleId, verseIndex) {
-  try {
-    console.log(`🎵 Generating audio for ${botName} (verse ${verseIndex})...`);
-
-    // Create music prompt for rap verse
-    const musicPrompt = `${botName} performing a rap verse: ${verseText}. Hip-hop beat with clear vocals.`;
-
-    const output = await replicate.run(
-      "minimax/music-01",
-      {
-        input: {
-          prompt: musicPrompt,
-          duration: 15 // 15 seconds for a 4-line verse
-        }
-      }
-    );
-
-    // output is a URL to the generated audio file
-    const audioUrl = output;
-
-    console.log(`✅ Audio generated: ${audioUrl}`);
-    return audioUrl;
-
-  } catch (error) {
-    console.error(`❌ Error generating audio for verse ${verseIndex}:`, error);
-    return null; // Return null if audio generation fails, battle can still continue
-  }
-}
-
-/**
- * Generate audio for all verses in the background (non-blocking)
- */
-async function generateAudioInBackground(verses, bot1, bot2) {
-  console.log(`🎵 Background: Generating audio for ${verses.length} verses...`);
-
-  for (const verse of verses) {
-    try {
-      const botName = verse.bot_id === bot1.id ? bot1.name : bot2.name;
-      const audioUrl = await generateAudio(verse.verse_text, botName, verse.battle_id, verse.round_number);
-
-      if (audioUrl) {
-        // Update verse with audio URL
-        await supabase
-          .from('battle_verses')
-          .update({ audio_url: audioUrl })
-          .eq('id', verse.id);
-
-        console.log(`✅ Audio saved for verse ${verse.id}`);
-      }
-    } catch (error) {
-      console.error(`❌ Failed to generate audio for verse ${verse.id}:`, error);
-    }
-  }
-
-  console.log('🎵 Background audio generation complete!');
-}
+// Audio generation removed - now handled on-demand by /api/generate-audio.js
+// This prevents timeout issues and allows battles to complete quickly
 
 /**
  * Main battle handler
@@ -321,7 +253,7 @@ export default async function handler(req, res) {
       throw battleError;
     }
 
-    // Save verses first (without audio)
+    // Save verses (audio will be generated on-demand when viewing battle)
     const versesToInsert = allVerses.map(v => ({
       battle_id: battle.id,
       bot_id: v.bot_id,
@@ -329,19 +261,10 @@ export default async function handler(req, res) {
       verse_type: v.round === 1 ? 'opening' : v.round === 2 ? 'comeback' : 'final',
       verse_text: v.verse_text,
       score: v.score,
-      audio_url: null // Will be updated by background job
+      audio_url: null // Will be generated on-demand by /api/generate-audio.js
     }));
 
-    const { data: insertedVerses } = await supabase.from('battle_verses').insert(versesToInsert).select();
-
-    // Generate audio asynchronously (non-blocking)
-    // This runs in the background without waiting
-    if (insertedVerses) {
-      console.log('🎵 Starting background audio generation...');
-      generateAudioInBackground(insertedVerses, bot1, bot2).catch(err => {
-        console.error('Background audio generation error:', err);
-      });
-    }
+    await supabase.from('battle_verses').insert(versesToInsert);
 
     // Update bot stats and ELO
     await supabase.from('bots').update({
