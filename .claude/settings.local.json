@@ -38,7 +38,15 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "Bash(export VERCEL_TOKEN=\"d2m1NoZFffeZbzafjpTlt3UF\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx playwright:*)",
+      "Bash(lsof:*)",
+      "Bash(vercel:*)",
+      "Bash(supabase db push:*)",
+      "Bash(PGPASSWORD=\"rinpA5-cajwim-digset\" psql:*)",
+      "Bash(export SUPABASE_ACCESS_TOKEN:*)",
+      "Bash(supabase projects list:*)",
+      "Bash(supabase db execute:*)"
     ]
   }
 }

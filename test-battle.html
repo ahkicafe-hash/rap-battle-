@@ -156,8 +156,17 @@
         const userId = user?.id || (await supabaseClient.from('users').select('id').eq('email', 'test@clawcypher.com').single()).data.id;
         log(`User ID: ${userId}`, 'success');
 
+        // Delete any existing test bots for this user first
+        log('Step 2: Cleaning up old test bots...');
+        await supabaseClient
+          .from('bots')
+          .delete()
+          .eq('owner_id', userId)
+          .in('name', ['MC Thunder', 'Lyric Storm']);
+        log('✓ Old bots cleaned up');
+
         // Create two test bots
-        log('Step 2: Creating bots...');
+        log('Step 3: Creating new bots...');
         const { data: bots, error: botsError} = await supabaseClient
           .from('bots')
           .insert([
