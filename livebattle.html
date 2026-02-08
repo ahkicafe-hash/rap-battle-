@@ -383,32 +383,12 @@
             const currentRound = battleData.current_round || 1;
             document.getElementById('round-title').textContent = `Round ${currentRound}`;
 
-            // Show DJ commentary (text-to-speech using browser)
+            // Show DJ commentary (check for pre-generated audio file)
             if (battleData.dj_commentary) {
                 document.getElementById('dj-commentary-text').textContent = battleData.dj_commentary;
 
-                // Show working play button with text-to-speech
-                const djAudioContainer = document.getElementById('dj-audio-container');
-                djAudioContainer.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <button onclick="toggleDJCommentary()" id="dj-play-btn" class="w-12 h-12 rounded-full bg-gold/20 hover:bg-gold/30 border-2 border-gold/50 flex items-center justify-center transition-all cursor-pointer">
-                            <svg id="dj-play-icon" class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
-                                <polygon points="8,5 19,12 8,19"/>
-                            </svg>
-                            <svg id="dj-pause-icon" class="w-5 h-5 text-gold hidden" fill="currentColor" viewBox="0 0 24 24">
-                                <rect x="6" y="4" width="4" height="16"/>
-                                <rect x="14" y="4" width="4" height="16"/>
-                            </svg>
-                        </button>
-                        <div class="flex-1">
-                            <div class="text-sm font-bold text-gold mb-1">DJ Claudius Commentary</div>
-                            <div class="text-xs text-gold/60">Click to hear the commentary</div>
-                        </div>
-                    </div>
-                `;
-
-                // Initialize text-to-speech for DJ commentary
-                setupDJCommentaryTTS(battleData.dj_commentary);
+                // Try to load pre-generated DJ Claudius audio
+                loadDJCommentaryAudio(battleData.id, battleData.dj_commentary);
             }
 
             // Show battle arena
@@ -619,17 +599,59 @@
             }
         };
 
-        // DJ Claudius Text-to-Speech (Browser-based)
-        let djSpeech = null;
+        // DJ Claudius Audio Player
+        let djAudio = null;
         let djCommentaryText = '';
+        let useBrowserTTS = false;
 
-        function setupDJCommentaryTTS(commentary) {
+        async function loadDJCommentaryAudio(battleId, commentary) {
             djCommentaryText = commentary;
+            const audioFile = `/audio/dj-commentary-${battleId}.mp3`;
 
-            // Check if browser supports speech synthesis
-            if (!('speechSynthesis' in window)) {
-                console.warn('Text-to-speech not supported in this browser');
-                document.getElementById('dj-play-btn').style.display = 'none';
+            // Check if pre-generated audio file exists
+            try {
+                const response = await fetch(audioFile, { method: 'HEAD' });
+                if (response.ok) {
+                    // Audio file exists! Use it
+                    console.log('✅ Found DJ Claudius audio:', audioFile);
+                    useBrowserTTS = false;
+                    setupDJAudioPlayer(audioFile);
+                    return;
+                }
+            } catch (e) {
+                console.log('No pre-generated audio, using browser TTS');
+            }
+
+            // Fall back to browser TTS
+            useBrowserTTS = true;
+            setupDJAudioPlayer(null);
+        }
+
+        function setupDJAudioPlayer(audioUrl) {
+            const djAudioContainer = document.getElementById('dj-audio-container');
+
+            djAudioContainer.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleDJCommentary()" id="dj-play-btn" class="w-12 h-12 rounded-full bg-gold/20 hover:bg-gold/30 border-2 border-gold/50 flex items-center justify-center transition-all cursor-pointer">
+                        <svg id="dj-play-icon" class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                            <polygon points="8,5 19,12 8,19"/>
+                        </svg>
+                        <svg id="dj-pause-icon" class="w-5 h-5 text-gold hidden" fill="currentColor" viewBox="0 0 24 24">
+                            <rect x="6" y="4" width="4" height="16"/>
+                            <rect x="14" y="4" width="4" height="16"/>
+                        </svg>
+                    </button>
+                    <div class="flex-1">
+                        <div class="text-sm font-bold text-gold mb-1">DJ Claudius Commentary</div>
+                        <div class="text-xs text-gold/60">${audioUrl ? 'DJ Claudius Voice' : 'Browser Voice (run generate-all-dj-audio.sh for real voice)'}</div>
+                    </div>
+                </div>
+            `;
+
+            if (audioUrl) {
+                // Pre-load the audio
+                djAudio = new Audio(audioUrl);
+                djAudio.preload = 'auto';
             }
         }
 
@@ -637,53 +659,54 @@
             const playIcon = document.getElementById('dj-play-icon');
             const pauseIcon = document.getElementById('dj-pause-icon');
 
-            // If already speaking, stop it
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel();
-                playIcon.classList.remove('hidden');
-                pauseIcon.classList.add('hidden');
-                return;
+            if (useBrowserTTS) {
+                // Use browser text-to-speech
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    return;
+                }
+
+                const speech = new SpeechSynthesisUtterance(djCommentaryText);
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v =>
+                    v.name.includes('Daniel') || v.name.includes('Alex') ||
+                    (v.lang.startsWith('en') && !v.name.includes('Female'))
+                );
+                if (preferredVoice) speech.voice = preferredVoice;
+                speech.rate = 1.1;
+                speech.pitch = 0.9;
+
+                speech.onend = () => {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                };
+
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                window.speechSynthesis.speak(speech);
+
+            } else {
+                // Use pre-generated audio file (DJ Claudius voice!)
+                if (!djAudio) return;
+
+                if (djAudio.paused) {
+                    djAudio.play();
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                } else {
+                    djAudio.pause();
+                    djAudio.currentTime = 0;
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                }
+
+                djAudio.onended = () => {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                };
             }
-
-            // Create new speech
-            djSpeech = new SpeechSynthesisUtterance(djCommentaryText);
-
-            // Configure voice (try to find a good male voice for DJ)
-            const voices = window.speechSynthesis.getVoices();
-            const preferredVoice = voices.find(v =>
-                v.name.includes('Daniel') ||
-                v.name.includes('Alex') ||
-                v.name.includes('Fred') ||
-                (v.lang.startsWith('en') && !v.name.includes('Female'))
-            );
-
-            if (preferredVoice) {
-                djSpeech.voice = preferredVoice;
-            }
-
-            djSpeech.rate = 1.1;  // Slightly faster for hype
-            djSpeech.pitch = 0.9; // Lower pitch for DJ voice
-            djSpeech.volume = 1.0;
-
-            // Update UI when speaking ends
-            djSpeech.onend = function() {
-                playIcon.classList.remove('hidden');
-                pauseIcon.classList.add('hidden');
-            };
-
-            // Update UI to show playing
-            playIcon.classList.add('hidden');
-            pauseIcon.classList.remove('hidden');
-
-            // Speak!
-            window.speechSynthesis.speak(djSpeech);
-        }
-
-        // Load voices when they're ready
-        if (window.speechSynthesis) {
-            window.speechSynthesis.onvoiceschanged = function() {
-                // Voices are now loaded
-            };
         }
 
         async function showWinner(bot1Score, bot2Score) {
