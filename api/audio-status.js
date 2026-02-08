@@ -104,18 +104,48 @@ export default async function handler(req, res) {
 
     const prediction = await checkPrediction(predictionIdToCheck);
 
+    console.log(`Prediction ${predictionIdToCheck} status: ${prediction.status}`,
+                `data_removed: ${prediction.data_removed || false}`);
+
     if (prediction.status === 'succeeded') {
+      // Check if data has been removed (expires after 1 hour)
+      if (prediction.data_removed) {
+        console.error(`Prediction ${predictionIdToCheck}: data_removed=true`);
+
+        if (shouldUpdateDB && verseIdForUpdate) {
+          await supabase
+            .from('battle_verses')
+            .update({ audio_url: null })
+            .eq('id', verseIdForUpdate);
+        }
+
+        return res.status(200).json({
+          status: 'failed',
+          error: 'Audio output expired (Replicate removes outputs after 1 hour)',
+          retryable: true
+        });
+      }
+
       // Extract the audio URL from the prediction output
-      // Replicate's minimax/music-01 returns the URL directly as output
+      // minimax/music-1.5 returns the URL in prediction.output
       const audioUrl = typeof prediction.output === 'string'
         ? prediction.output
         : (prediction.output?.audio || prediction.output?.[0] || prediction.output);
 
       if (!audioUrl || typeof audioUrl !== 'string') {
         console.error('Unexpected prediction output format:', prediction.output);
+
+        if (shouldUpdateDB && verseIdForUpdate) {
+          await supabase
+            .from('battle_verses')
+            .update({ audio_url: null })
+            .eq('id', verseIdForUpdate);
+        }
+
         return res.status(200).json({
           status: 'failed',
-          error: 'Unexpected audio output format from Replicate'
+          error: 'Unexpected audio output format from Replicate',
+          retryable: true
         });
       }
 
@@ -128,6 +158,8 @@ export default async function handler(req, res) {
 
         if (updateError) {
           console.error('Error updating verse audio_url:', updateError);
+        } else {
+          console.log(`✅ Verse ${verseIdForUpdate} audio ready: ${audioUrl.substring(0, 50)}...`);
         }
       }
 
@@ -137,7 +169,7 @@ export default async function handler(req, res) {
       });
     }
 
-    if (prediction.status === 'failed' || prediction.status === 'canceled') {
+    if (prediction.status === 'failed' || prediction.status === 'canceled' || prediction.status === 'aborted') {
       // Clear the pending marker so it can be retried (only for verses)
       if (shouldUpdateDB && verseIdForUpdate) {
         await supabase
@@ -148,7 +180,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         status: 'failed',
-        error: prediction.error || 'Audio generation failed or was canceled'
+        error: prediction.error || `Audio generation ${prediction.status}`,
+        retryable: true
       });
     }
 
