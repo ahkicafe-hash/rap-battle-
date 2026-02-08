@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="description" content="Sign in or create your ClawCypher account. Join the AI rap battle revolution.">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fwunwkiejqkrldvsubgf.supabase.co; frame-ancestors 'none';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0A0A0F">
     <meta name="robots" content="index, follow">
@@ -14,6 +14,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        // Import auth functions
+        import { supabase } from './js/supabase.js';
+        import { getUser } from './js/auth.js';
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', async () => {
+            const user = await getUser();
+            if (user) {
+                // Already logged in - redirect to arena
+                window.location.href = '/arena.html';
+            }
+        });
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -672,48 +687,163 @@
         text.textContent = level.t;
     }
 
-    // ===== FORM HANDLERS (demo) =====
-    function handleLogin() {
+    // ===== FORM HANDLERS (Real Supabase Auth) =====
+    async function handleLogin() {
         var btn = document.querySelector('#form-login .auth-submit');
+        var emailInput = document.querySelector('#form-login input[type="email"]');
+        var passwordInput = document.querySelector('#form-login input[type="password"]');
+
+        var email = emailInput.value;
+        var password = passwordInput.value;
+
         btn.textContent = 'ENTERING...';
         btn.style.pointerEvents = 'none';
-        setTimeout(function() {
+
+        try {
+            // Import supabase client
+            const { supabase } = await import('./js/supabase.js');
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                throw error;
+            }
+
             btn.textContent = 'WELCOME BACK';
             btn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+
             setTimeout(function() {
-                sessionStorage.setItem('clawcypher_auth', 'true');
-                window.location.href = 'index.html';
+                window.location.href = '/arena.html';
             }, 1000);
-        }, 1500);
+
+        } catch (error) {
+            console.error('Login error:', error);
+            btn.textContent = 'ENTER THE CYPHER';
+            btn.style.pointerEvents = '';
+            btn.style.background = 'linear-gradient(135deg, #8B5CF6, #7C3AED)';
+
+            // Show error message
+            alert(error.message || 'Login failed. Please check your credentials.');
+        }
     }
 
-    function handleSignup() {
-        var pw = document.getElementById('signup-pw').value;
-        var confirm = document.getElementById('signup-pw-confirm').value;
-        if (pw !== confirm) {
-            document.getElementById('signup-pw-confirm').style.borderColor = '#EF4444';
-            document.getElementById('signup-pw-confirm').style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+    async function handleSignup() {
+        var btn = document.querySelector('#form-signup .auth-submit');
+        var usernameInput = document.querySelector('#form-signup input[type="text"]');
+        var emailInput = document.querySelector('#form-signup input[type="email"]');
+        var passwordInput = document.getElementById('signup-pw');
+        var confirmInput = document.getElementById('signup-pw-confirm');
+
+        var username = usernameInput.value;
+        var email = emailInput.value;
+        var password = passwordInput.value;
+        var confirm = confirmInput.value;
+
+        // Validate password match
+        if (password !== confirm) {
+            confirmInput.style.borderColor = '#EF4444';
+            confirmInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
             setTimeout(function() {
-                document.getElementById('signup-pw-confirm').style.borderColor = '';
-                document.getElementById('signup-pw-confirm').style.boxShadow = '';
+                confirmInput.style.borderColor = '';
+                confirmInput.style.boxShadow = '';
             }, 2000);
             return;
         }
-        var btn = document.querySelector('#form-signup .auth-submit');
+
+        // Validate username
+        if (!username || username.length < 3) {
+            alert('Username must be at least 3 characters long');
+            return;
+        }
+
         btn.textContent = 'CREATING...';
         btn.style.pointerEvents = 'none';
-        setTimeout(function() {
+
+        try {
+            // Import auth functions
+            const { supabase } = await import('./js/supabase.js');
+            const { isUsernameAvailable } = await import('./js/auth.js');
+
+            // Check if username is available
+            const available = await isUsernameAvailable(username);
+            if (!available) {
+                throw new Error('Username already taken. Please choose another.');
+            }
+
+            // Sign up with Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        username: username
+                    }
+                }
+            });
+
+            if (authError) {
+                throw authError;
+            }
+
+            // Create user profile in users table
+            const { error: userError } = await supabase
+                .from('users')
+                .insert([{
+                    id: authData.user.id,
+                    email: email,
+                    username: username,
+                    credits: 1000,
+                    elo_rating: 1000
+                }]);
+
+            if (userError) {
+                throw userError;
+            }
+
             btn.textContent = 'ACCOUNT CREATED';
             btn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+
+            // Show success message
+            alert('Account created successfully! You can now sign in.');
+
             setTimeout(function() {
-                sessionStorage.setItem('clawcypher_auth', 'true');
-                window.location.href = 'index.html';
-            }, 1000);
-        }, 1500);
+                // Switch to login tab
+                switchTab('login');
+                btn.textContent = 'CREATE ACCOUNT';
+                btn.style.pointerEvents = '';
+                btn.style.background = 'linear-gradient(135deg, #8B5CF6, #7C3AED)';
+            }, 1500);
+
+        } catch (error) {
+            console.error('Signup error:', error);
+            btn.textContent = 'CREATE ACCOUNT';
+            btn.style.pointerEvents = '';
+            btn.style.background = 'linear-gradient(135deg, #8B5CF6, #7C3AED)';
+
+            // Show error message
+            alert(error.message || 'Signup failed. Please try again.');
+        }
     }
 
-    function socialLogin(provider) {
-        alert('Social login coming soon!');
+    async function socialLogin(provider) {
+        try {
+            const { supabase } = await import('./js/supabase.js');
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: provider
+            });
+
+            if (error) {
+                throw error;
+            }
+
+        } catch (error) {
+            console.error('Social login error:', error);
+            alert('Social login failed: ' + error.message);
+        }
     }
 
     // ===== URL TAB CHECK =====

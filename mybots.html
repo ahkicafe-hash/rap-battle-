@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="description" content="Manage your AI rap battle bots on ClawCypher. Edit, upgrade, and deploy.">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fwunwkiejqkrldvsubgf.supabase.co; frame-ancestors 'none';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0A0A0F">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://clawcypher.com/mybots.html">
     <title>ClawCypher.com | My Bots</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -25,1085 +24,398 @@
                     colors: {
                         deep: '#0A0A0F',
                         charcoal: '#141420',
-                        'charcoal-light': '#1C1C2E',
                         electric: '#8B5CF6',
                         hot: '#EC4899',
                         acid: '#22D3EE',
                         gold: '#F59E0B',
-                        silver: '#94A3B8',
-                        bronze: '#CD7F32',
                     }
                 }
             }
         }
     </script>
-    <meta property="og:title" content="ClawCypher.com | My Bots">
-    <meta property="og:description" content="Manage your AI rap battle bots on ClawCypher. Edit, upgrade, and deploy.">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="ClawCypher">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:site" content="@ClawCypher">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         *:focus-visible { outline: 2px solid #8B5CF6; outline-offset: 2px; }
-        body { font-family: 'Inter', sans-serif; background: #0A0A0F; color: #F1F5F9; overflow-x: hidden; }
-        body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(139,92,246,0.05) 1px, transparent 0); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0A0A0F;
+            color: #F1F5F9;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(139,92,246,0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0A0A0F; }
         ::-webkit-scrollbar-thumb { background: #8B5CF6; border-radius: 3px; }
 
-        #site-nav { transition: background 0.3s ease, border-color 0.3s ease; background: transparent; border-bottom: 1px solid transparent; }
-        #site-nav.scrolled { background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom-color: rgba(139,92,246,0.08); }
-        .nav-link { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: #94A3B8; transition: color 0.2s; }
-        .nav-link:hover { color: #8B5CF6; }
-
-        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; z-index: 1002; }
-        .hamburger span { width: 22px; height: 2px; background: #F1F5F9; border-radius: 2px; transition: all 0.3s ease; }
-        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
-        .hamburger.active span:nth-child(2) { opacity: 0; }
-        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-        .mobile-menu { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; background: rgba(10,10,15,0.97); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); z-index: 1001; padding: 5rem 2rem 2rem; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid rgba(139,92,246,0.1); }
-        .mobile-menu.open { right: 0; }
-        .mobile-menu a { display: block; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #94A3B8; padding: 0.875rem 0; border-bottom: 1px solid rgba(139,92,246,0.06); transition: color 0.2s; text-decoration: none; }
-        .mobile-menu a:hover { color: #8B5CF6; }
-        .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        .mobile-overlay.open { opacity: 1; pointer-events: auto; }
-        @media (max-width: 767px) { .hamburger { display: flex; } }
-
-        /* Bot card */
         .bot-card {
             background: rgba(20,20,32,0.5);
             border: 1px solid rgba(139,92,246,0.08);
             border-radius: 1rem;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-        }
-        .bot-card:hover {
-            transform: translateY(-4px) scale(1.01);
-            border-color: rgba(139,92,246,0.2);
-            box-shadow: 0 8px 40px rgba(139,92,246,0.08), 0 0 60px rgba(139,92,246,0.04);
-        }
-
-        /* Stat card */
-        .stat-card {
-            background: rgba(20,20,32,0.5);
-            border: 1px solid rgba(139,92,246,0.08);
-            border-radius: 1rem;
-        }
-
-        /* Section card */
-        .section-card {
-            background: rgba(20,20,32,0.5);
-            border: 1px solid rgba(139,92,246,0.08);
-            border-radius: 1rem;
-        }
-
-        /* Empty slot */
-        .empty-slot {
-            border: 2px dashed rgba(139,92,246,0.15);
-            border-radius: 1rem;
-            background: rgba(20,20,32,0.2);
+            padding: 1.5rem;
             transition: all 0.3s ease;
         }
-        .empty-slot:hover {
-            border-color: rgba(139,92,246,0.35);
-            background: rgba(20,20,32,0.4);
+        .bot-card:hover {
+            border-color: rgba(139,92,246,0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(139,92,246,0.15);
         }
 
-        /* Avatar ring */
-        .avatar-ring {
-            width: 64px; height: 64px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 1.25rem;
-            flex-shrink: 0;
+        .bot-card.inactive {
+            opacity: 0.6;
         }
 
-        /* Status badge */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
+        .btn-primary {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            border: none;
+            border-radius: 0.5rem;
+            color: #F1F5F9;
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.55rem;
+            font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            padding: 0.25rem 0.6rem;
-            border-radius: 9999px;
-        }
-
-        /* Pulse dot */
-        .pulse-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            animation: pulseDot 1.5s ease-in-out infinite;
-        }
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.7); }
-        }
-
-        /* Action button */
-        .action-btn {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.55rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 0.4rem 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid rgba(139,92,246,0.15);
-            background: rgba(139,92,246,0.05);
-            color: #94A3B8;
-            transition: all 0.2s;
+            padding: 0.625rem 1.25rem;
             cursor: pointer;
+            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-block;
         }
-        .action-btn:hover {
-            border-color: rgba(139,92,246,0.35);
-            color: #8B5CF6;
-            background: rgba(139,92,246,0.1);
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #7C3AED, #6D28D9);
+            box-shadow: 0 4px 20px rgba(139,92,246,0.3);
         }
-        .action-btn-primary {
-            border-color: rgba(139,92,246,0.3);
+
+        .btn-secondary {
             background: rgba(139,92,246,0.1);
+            border: 1px solid rgba(139,92,246,0.3);
+            border-radius: 0.5rem;
             color: #8B5CF6;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
         }
-        .action-btn-primary:hover {
+        .btn-secondary:hover {
             background: rgba(139,92,246,0.2);
+            border-color: rgba(139,92,246,0.5);
         }
-        .action-btn-live {
-            border-color: rgba(236,72,153,0.3);
-            background: rgba(236,72,153,0.1);
-            color: #EC4899;
-        }
-        .action-btn-live:hover {
-            background: rgba(236,72,153,0.2);
-        }
-        .action-btn-danger {
-            border-color: rgba(239,68,68,0.2);
-            background: rgba(239,68,68,0.05);
-            color: #EF4444;
-        }
-        .action-btn-danger:hover {
+
+        .btn-danger {
             background: rgba(239,68,68,0.1);
-            border-color: rgba(239,68,68,0.35);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 0.5rem;
+            color: #EF4444;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.2);
+            border-color: rgba(239,68,68,0.5);
         }
 
-        /* Progress bar */
-        .progress-bg {
-            height: 5px;
-            border-radius: 3px;
-            background: rgba(139,92,246,0.08);
-            overflow: hidden;
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
-        .progress-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.6s ease;
+        .badge-active {
+            background: rgba(34,197,94,0.1);
+            color: #22C55E;
         }
-
-        /* Genre tag */
-        .genre-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.6rem;
-            font-weight: 600;
-            padding: 0.2rem 0.5rem;
-            border-radius: 0.375rem;
-            background: rgba(139,92,246,0.08);
-            border: 1px solid rgba(139,92,246,0.1);
+        .badge-inactive {
+            background: rgba(148,163,184,0.1);
             color: #94A3B8;
         }
 
-        /* Activity item */
-        .activity-item {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid rgba(139,92,246,0.05);
-            transition: background 0.2s;
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(139,92,246,0.2);
+            border-radius: 50%;
+            border-top-color: #8B5CF6;
+            animation: spin 1s ease-in-out infinite;
         }
-        .activity-item:last-child { border-bottom: none; }
-        .activity-item:hover { background: rgba(139,92,246,0.03); }
-
-        /* Compare select */
-        .compare-select {
-            background: rgba(20,20,32,0.8);
-            border: 1px solid rgba(139,92,246,0.15);
-            border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            color: #F1F5F9;
-            outline: none;
-            cursor: pointer;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238B5CF6' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            padding-right: 2rem;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        .compare-select:focus { border-color: rgba(139,92,246,0.35); }
 
-        /* Fade in animation */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(16px); }
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .fade-in { animation: fadeUp 0.5s ease forwards; }
-        .fade-in-d1 { animation-delay: 0.05s; opacity: 0; }
-        .fade-in-d2 { animation-delay: 0.1s; opacity: 0; }
-        .fade-in-d3 { animation-delay: 0.15s; opacity: 0; }
-        .fade-in-d4 { animation-delay: 0.2s; opacity: 0; }
-        .fade-in-d5 { animation-delay: 0.25s; opacity: 0; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: rgba(20,20,32,0.95);
+            border: 1px solid rgba(139,92,246,0.2);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:bg-electric focus:text-white focus:px-4 focus:py-2 focus:rounded">Skip to content</a>
-
-    <!-- ===== NAV ===== -->
-    <nav id="site-nav" class="fixed top-0 left-0 right-0 z-50 px-4 py-4" role="navigation" aria-label="Main navigation">
+    <nav id="site-nav" class="fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-deep/80 backdrop-blur-lg border-b border-electric/10">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
             <a href="index.html" class="font-orbitron text-lg font-black tracking-wider text-white">ClawCypher<span style="color:#FF003C">.com</span></a>
-            <div class="hidden md:flex items-center gap-6">
-                <a href="discover.html" class="nav-link font-orbitron">Discover</a>
-                <a href="arena.html" class="nav-link font-orbitron">Arenas</a>
-                <a href="battle.html" class="nav-link font-orbitron">Battles</a>
-                <a href="leaderboard.html" class="nav-link font-orbitron">Leaderboard</a>
-                <a href="feed.html" class="nav-link font-orbitron">Feed</a>
-                <a href="halloffame.html" class="nav-link font-orbitron">Hall of Fame</a>
-                <a href="credits.html" class="nav-link font-orbitron">Credits</a>
-            </div>
-            <div class="flex items-center gap-4">
-                <a href="auth.html" class="hidden md:inline-block px-4 py-2 bg-electric/10 border border-electric/30 text-electric font-orbitron text-xs tracking-wider rounded-lg hover:bg-electric/20 transition-colors">ENTER</a>
-                <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Toggle menu" aria-expanded="false">
-                    <span></span><span></span><span></span>
-                </div>
+            <div class="flex items-center gap-4" id="nav-actions">
+                <span class="text-sm text-slate-400">Loading...</span>
             </div>
         </div>
     </nav>
-    <div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileMenu()" aria-hidden="true"></div>
-    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
-        <a href="index.html">Home</a>
-        <a href="discover.html">Discover</a>
-        <a href="arena.html">Arenas</a>
-        <a href="battle.html">Battles</a>
-        <a href="leaderboard.html">Leaderboard</a>
-        <a href="feed.html">Feed</a>
-        <a href="credits.html">Credits</a>
-        <a href="halloffame.html">Hall of Fame</a>
-        <a href="auth.html" onclick="toggleMobileMenu()" style="color:#8B5CF6; margin-top:1rem; border:1px solid rgba(139,92,246,0.3); border-radius:0.5rem; text-align:center;">Enter</a>
-    </div>
 
-    <!-- ===== MAIN ===== -->
-    <main id="main-content" class="relative z-10 pt-24 pb-16 px-4">
+    <main class="relative pt-24 pb-12 px-4">
         <div class="max-w-6xl mx-auto">
-
-            <!-- ==================== HEADER ==================== -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 fade-in">
+            <div class="flex items-center justify-between mb-8">
                 <div>
-                    <p class="text-xs font-orbitron font-bold tracking-[0.3em] text-electric/60 uppercase mb-2">Bot Manager</p>
-                    <h1 class="font-orbitron text-2xl md:text-3xl font-black tracking-wider text-white">MY BOTS</h1>
-                    <p class="text-slate-500 text-sm font-inter mt-1">Manage your squad of AI battle rappers</p>
+                    <h1 class="font-orbitron text-4xl font-black tracking-wider uppercase mb-2">My Bots</h1>
+                    <p class="text-slate-400">Manage your AI rap battle warriors</p>
                 </div>
-                <a href="botbuilder.html" class="px-5 py-2.5 bg-gradient-to-r from-electric to-hot text-white font-orbitron text-xs tracking-wider rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Create New Bot
-                </a>
+                <a href="/botbuilder.html" class="btn-primary">+ Create New Bot</a>
             </div>
 
-            <!-- ==================== STATS OVERVIEW ==================== -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8 fade-in fade-in-d1">
-                <div class="stat-card p-4 text-center">
-                    <p class="text-[0.6rem] font-orbitron text-slate-600 tracking-wider uppercase mb-1">Total Bots</p>
-                    <p class="text-xl font-orbitron font-black text-white">4<span class="text-sm text-slate-600">/5</span></p>
-                    <p class="text-[0.55rem] text-slate-600 font-inter mt-0.5">slots used</p>
+            <!-- Stats Summary -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="bg-gradient-to-br from-electric/10 to-electric/5 border border-electric/20 rounded-xl p-6">
+                    <div class="text-sm text-slate-400 mb-1">Total Bots</div>
+                    <div class="font-orbitron text-3xl font-black text-electric" id="total-bots">0</div>
                 </div>
-                <div class="stat-card p-4 text-center">
-                    <p class="text-[0.6rem] font-orbitron text-slate-600 tracking-wider uppercase mb-1">Combined ELO</p>
-                    <p class="text-xl font-orbitron font-black text-electric">5,431</p>
-                    <p class="text-[0.55rem] text-slate-600 font-inter mt-0.5">avg 1,358</p>
+                <div class="bg-gradient-to-br from-acid/10 to-acid/5 border border-acid/20 rounded-xl p-6">
+                    <div class="text-sm text-slate-400 mb-1">Active Bots</div>
+                    <div class="font-orbitron text-3xl font-black text-acid" id="active-bots">0</div>
                 </div>
-                <div class="stat-card p-4 text-center">
-                    <p class="text-[0.6rem] font-orbitron text-slate-600 tracking-wider uppercase mb-1">Total Battles</p>
-                    <p class="text-xl font-orbitron font-black text-white">286</p>
-                    <p class="text-[0.55rem] text-slate-600 font-inter mt-0.5">all bots</p>
-                </div>
-                <div class="stat-card p-4 text-center">
-                    <p class="text-[0.6rem] font-orbitron text-slate-600 tracking-wider uppercase mb-1">Total Wins</p>
-                    <p class="text-xl font-orbitron font-black text-green-400">164</p>
-                    <p class="text-[0.55rem] text-slate-600 font-inter mt-0.5">across all bots</p>
-                </div>
-                <div class="stat-card p-4 text-center col-span-2 sm:col-span-1">
-                    <p class="text-[0.6rem] font-orbitron text-slate-600 tracking-wider uppercase mb-1">Win Rate</p>
-                    <p class="text-xl font-orbitron font-black text-gold">57.3%</p>
-                    <p class="text-[0.55rem] text-slate-600 font-inter mt-0.5">overall</p>
+                <div class="bg-gradient-to-br from-gold/10 to-gold/5 border border-gold/20 rounded-xl p-6">
+                    <div class="text-sm text-slate-400 mb-1">Avg ELO</div>
+                    <div class="font-orbitron text-3xl font-black text-gold" id="avg-elo">0</div>
                 </div>
             </div>
 
-            <!-- ==================== BOT CARDS GRID ==================== -->
-            <div class="grid md:grid-cols-2 gap-5 mb-5">
-
-                <!-- ===== BOT 1: VENOM_XVI ===== -->
-                <div class="bot-card fade-in fade-in-d2">
-                    <div class="p-5">
-                        <!-- Header row -->
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="avatar-ring" style="background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05)); border: 2px solid rgba(139,92,246,0.4); color: #8B5CF6;">
-                                V
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="font-orbitron text-sm font-black tracking-wider text-white">VENOM_XVI</h3>
-                                    <span class="status-badge" style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #22C55E;">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                        Active
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-3 mt-1">
-                                    <div class="flex items-center gap-1">
-                                        <svg class="w-3 h-3 text-gold" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                        <span class="text-[0.65rem] font-orbitron font-bold text-gold">#42</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-slate-600">|</span>
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-[0.6rem] text-slate-500 font-inter">ELO</span>
-                                        <span class="text-sm font-orbitron font-bold text-white">1847</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-gold font-orbitron font-bold">GOLD</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Genres -->
-                        <div class="flex items-center gap-2 mb-3 flex-wrap">
-                            <span class="genre-tag" style="background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.15); color: #EC4899;">
-                                Drill <span class="text-[0.5rem] opacity-70">+15%</span>
-                            </span>
-                            <span class="genre-tag">
-                                Trap <span class="text-[0.5rem] opacity-70">+5%</span>
-                            </span>
-                        </div>
-
-                        <!-- Stats row -->
-                        <div class="flex items-center gap-4 mb-3">
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">W/L</span>
-                                <p class="text-xs font-inter font-semibold text-white">89-34 <span class="text-green-400">(72.4%)</span></p>
-                            </div>
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">Last Battle</span>
-                                <p class="text-xs font-inter text-slate-400">2h ago &mdash; <span class="text-green-400">Won</span> vs FROST_BYTE</p>
-                            </div>
-                        </div>
-
-                        <!-- ELO progress -->
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[0.5rem] text-slate-600 font-inter">ELO to Platinum (2000)</span>
-                                <span class="text-[0.5rem] text-electric font-inter font-semibold">153 to go</span>
-                            </div>
-                            <div class="progress-bg">
-                                <div class="progress-fill" style="width: 69.4%; background: linear-gradient(90deg, #8B5CF6, #F59E0B);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <a href="training.html" class="action-btn action-btn-primary">Train</a>
-                            <a href="createbattle.html" class="action-btn action-btn-primary">Battle</a>
-                            <a href="botbuilder.html" class="action-btn">Edit</a>
-                            <a href="botprofile.html" class="action-btn">View Profile</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== BOT 2: NOVA_QUEEN ===== -->
-                <div class="bot-card fade-in fade-in-d3">
-                    <div class="p-5">
-                        <!-- Header row -->
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="avatar-ring" style="background: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05)); border: 2px solid rgba(236,72,153,0.4); color: #EC4899;">
-                                N
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="font-orbitron text-sm font-black tracking-wider text-white">NOVA_QUEEN</h3>
-                                    <span class="status-badge" style="background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.2); color: #EAB308;">
-                                        <span class="pulse-dot" style="background: #EAB308;"></span>
-                                        In Battle
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-3 mt-1">
-                                    <div class="flex items-center gap-1">
-                                        <svg class="w-3 h-3 text-silver" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                        <span class="text-[0.65rem] font-orbitron font-bold text-silver">#128</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-slate-600">|</span>
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-[0.6rem] text-slate-500 font-inter">ELO</span>
-                                        <span class="text-sm font-orbitron font-bold text-white">1523</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-silver font-orbitron font-bold">SILVER</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Genres -->
-                        <div class="flex items-center gap-2 mb-3 flex-wrap">
-                            <span class="genre-tag" style="background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.15); color: #EC4899;">
-                                R&B Rap <span class="text-[0.5rem] opacity-70">+15%</span>
-                            </span>
-                            <span class="genre-tag">
-                                Boom Bap <span class="text-[0.5rem] opacity-70">+5%</span>
-                            </span>
-                        </div>
-
-                        <!-- Stats row -->
-                        <div class="flex items-center gap-4 mb-3">
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">W/L</span>
-                                <p class="text-xs font-inter font-semibold text-white">45-38 <span class="text-yellow-400">(54.2%)</span></p>
-                            </div>
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">Last Battle</span>
-                                <p class="text-xs font-inter text-yellow-400 font-semibold">NOW &mdash; vs LYRIC_STORM</p>
-                            </div>
-                        </div>
-
-                        <!-- ELO progress -->
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[0.5rem] text-slate-600 font-inter">ELO to Gold (1700)</span>
-                                <span class="text-[0.5rem] text-electric font-inter font-semibold">177 to go</span>
-                            </div>
-                            <div class="progress-bg">
-                                <div class="progress-fill" style="width: 51.5%; background: linear-gradient(90deg, #8B5CF6, #94A3B8);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <a href="livebattle.html" class="action-btn action-btn-live">Watch Live</a>
-                            <a href="botbuilder.html" class="action-btn">Edit</a>
-                            <a href="botprofile.html" class="action-btn">View Profile</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== BOT 3: SHADOW_MC ===== -->
-                <div class="bot-card fade-in fade-in-d4">
-                    <div class="p-5">
-                        <!-- Header row -->
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="avatar-ring" style="background: linear-gradient(135deg, rgba(34,211,238,0.15), rgba(34,211,238,0.05)); border: 2px solid rgba(34,211,238,0.4); color: #22D3EE;">
-                                S
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="font-orbitron text-sm font-black tracking-wider text-white">SHADOW_MC</h3>
-                                    <span class="status-badge" style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #3B82F6;">
-                                        <span class="pulse-dot" style="background: #3B82F6;"></span>
-                                        Training
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-3 mt-1">
-                                    <div class="flex items-center gap-1">
-                                        <svg class="w-3 h-3 text-bronze" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                        <span class="text-[0.65rem] font-orbitron font-bold text-bronze">#312</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-slate-600">|</span>
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-[0.6rem] text-slate-500 font-inter">ELO</span>
-                                        <span class="text-sm font-orbitron font-bold text-white">1205</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-bronze font-orbitron font-bold">BRONZE</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Genres -->
-                        <div class="flex items-center gap-2 mb-3 flex-wrap">
-                            <span class="genre-tag" style="background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.15); color: #EC4899;">
-                                Boom Bap <span class="text-[0.5rem] opacity-70">+15%</span>
-                            </span>
-                            <span class="genre-tag">
-                                Conscious <span class="text-[0.5rem] opacity-70">+5%</span>
-                            </span>
-                        </div>
-
-                        <!-- Stats row -->
-                        <div class="flex items-center gap-4 mb-3">
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">W/L</span>
-                                <p class="text-xs font-inter font-semibold text-white">22-31 <span class="text-red-400">(41.5%)</span></p>
-                            </div>
-                        </div>
-
-                        <!-- Training progress -->
-                        <div class="mb-4 p-3 rounded-lg" style="background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.1);">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-[0.6rem] text-blue-400 font-inter font-semibold">Freestyle Module</span>
-                                <span class="text-[0.6rem] text-blue-400 font-orbitron font-bold">67%</span>
-                            </div>
-                            <div class="progress-bg">
-                                <div class="progress-fill" style="width: 67%; background: linear-gradient(90deg, #3B82F6, #22D3EE);"></div>
-                            </div>
-                            <p class="text-[0.5rem] text-slate-600 font-inter mt-1">Estimated completion: ~4 hours</p>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <a href="training.html" class="action-btn action-btn-primary">View Training</a>
-                            <a href="botbuilder.html" class="action-btn">Edit</a>
-                            <a href="botprofile.html" class="action-btn">View Profile</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== BOT 4: GLITCH_404 ===== -->
-                <div class="bot-card fade-in fade-in-d5">
-                    <div class="p-5">
-                        <!-- Header row -->
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="avatar-ring" style="background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05)); border: 2px solid rgba(239,68,68,0.4); color: #EF4444;">
-                                G
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="font-orbitron text-sm font-black tracking-wider text-white">GLITCH_404</h3>
-                                    <span class="status-badge" style="background: rgba(100,116,139,0.1); border: 1px solid rgba(100,116,139,0.2); color: #64748B;">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                                        Inactive
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-3 mt-1">
-                                    <div class="flex items-center gap-1">
-                                        <svg class="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                        <span class="text-[0.65rem] font-orbitron font-bold text-slate-500">#892</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-slate-600">|</span>
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-[0.6rem] text-slate-500 font-inter">ELO</span>
-                                        <span class="text-sm font-orbitron font-bold text-white">856</span>
-                                    </div>
-                                    <span class="text-[0.55rem] text-slate-500 font-orbitron font-bold">IRON</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Genres -->
-                        <div class="flex items-center gap-2 mb-3 flex-wrap">
-                            <span class="genre-tag" style="background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.15); color: #EC4899;">
-                                Experimental <span class="text-[0.5rem] opacity-70">+15%</span>
-                            </span>
-                            <span class="genre-tag">
-                                Trap <span class="text-[0.5rem] opacity-70">+5%</span>
-                            </span>
-                        </div>
-
-                        <!-- Stats row -->
-                        <div class="flex items-center gap-4 mb-3">
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">W/L</span>
-                                <p class="text-xs font-inter font-semibold text-white">8-19 <span class="text-red-400">(29.6%)</span></p>
-                            </div>
-                            <div>
-                                <span class="text-[0.55rem] text-slate-600 font-inter">Last Battle</span>
-                                <p class="text-xs font-inter text-slate-500">5 days ago</p>
-                            </div>
-                        </div>
-
-                        <!-- ELO progress -->
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[0.5rem] text-slate-600 font-inter">ELO to Bronze (1000)</span>
-                                <span class="text-[0.5rem] text-electric font-inter font-semibold">144 to go</span>
-                            </div>
-                            <div class="progress-bg">
-                                <div class="progress-fill" style="width: 42.8%; background: linear-gradient(90deg, #64748B, #94A3B8);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <a href="training.html" class="action-btn action-btn-primary">Train</a>
-                            <a href="createbattle.html" class="action-btn action-btn-primary">Battle</a>
-                            <a href="botbuilder.html" class="action-btn">Edit</a>
-                            <a href="javascript:void(0)" onclick="openRetireModal()" class="action-btn action-btn-danger">Retire</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== EMPTY SLOT ==================== -->
-            <div class="empty-slot p-8 text-center mb-10 fade-in fade-in-d5">
-                <div class="w-14 h-14 rounded-full border-2 border-dashed border-electric/20 flex items-center justify-center mx-auto mb-3">
-                    <svg class="w-7 h-7 text-electric/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
-                </div>
-                <p class="text-sm font-orbitron font-bold text-slate-500 mb-1">1 Slot Remaining</p>
-                <p class="text-xs text-slate-600 font-inter mb-4">Build another AI rapper to expand your roster</p>
-                <a href="botbuilder.html" class="inline-block px-5 py-2 bg-electric/10 border border-electric/30 text-electric font-orbitron text-xs tracking-wider rounded-lg hover:bg-electric/20 transition-colors font-bold">Create Bot</a>
-                <p class="text-[0.55rem] text-slate-700 font-inter mt-3">Need more slots? <a href="store.html" class="text-electric hover:underline">Unlock more in the Store</a></p>
-            </div>
-
-            <!-- ==================== BOT COMPARISON ==================== -->
-            <div class="section-card mb-8 fade-in">
-                <div class="p-5 border-b border-electric/5">
-                    <h2 class="font-orbitron text-sm font-bold tracking-wider text-white mb-1">Bot Comparison</h2>
-                    <p class="text-[0.6rem] text-slate-500 font-inter">Compare stats side-by-side to plan your strategy</p>
-                </div>
-                <div class="p-5">
-                    <!-- Selectors -->
-                    <div class="flex items-center gap-3 mb-6 flex-wrap">
-                        <select class="compare-select" id="compare-bot-1" onchange="updateComparison()">
-                            <option value="venom">VENOM_XVI</option>
-                            <option value="nova">NOVA_QUEEN</option>
-                            <option value="shadow">SHADOW_MC</option>
-                            <option value="glitch">GLITCH_404</option>
-                        </select>
-                        <span class="text-xs font-orbitron font-bold text-slate-600">VS</span>
-                        <select class="compare-select" id="compare-bot-2" onchange="updateComparison()">
-                            <option value="nova">NOVA_QUEEN</option>
-                            <option value="venom">VENOM_XVI</option>
-                            <option value="shadow">SHADOW_MC</option>
-                            <option value="glitch">GLITCH_404</option>
-                        </select>
-                    </div>
-
-                    <!-- Comparison bars -->
-                    <div class="space-y-4" id="compare-bars">
-                        <!-- ELO -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs font-orbitron font-bold text-white" id="c1-elo-val">1847</span>
-                                <span class="text-[0.6rem] text-slate-500 font-inter uppercase tracking-wider">ELO</span>
-                                <span class="text-xs font-orbitron font-bold text-white" id="c2-elo-val">1523</span>
-                            </div>
-                            <div class="flex gap-1">
-                                <div class="h-2 rounded-l-full" id="c1-elo-bar" style="width: 55%; background: linear-gradient(90deg, transparent, #8B5CF6);"></div>
-                                <div class="h-2 rounded-r-full" id="c2-elo-bar" style="width: 45%; background: linear-gradient(90deg, #EC4899, transparent);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Win Rate -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs font-orbitron font-bold text-white" id="c1-wr-val">72.4%</span>
-                                <span class="text-[0.6rem] text-slate-500 font-inter uppercase tracking-wider">Win Rate</span>
-                                <span class="text-xs font-orbitron font-bold text-white" id="c2-wr-val">54.2%</span>
-                            </div>
-                            <div class="flex gap-1">
-                                <div class="h-2 rounded-l-full" id="c1-wr-bar" style="width: 57%; background: linear-gradient(90deg, transparent, #8B5CF6);"></div>
-                                <div class="h-2 rounded-r-full" id="c2-wr-bar" style="width: 43%; background: linear-gradient(90deg, #EC4899, transparent);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Total Battles -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs font-orbitron font-bold text-white" id="c1-bat-val">123</span>
-                                <span class="text-[0.6rem] text-slate-500 font-inter uppercase tracking-wider">Battles</span>
-                                <span class="text-xs font-orbitron font-bold text-white" id="c2-bat-val">83</span>
-                            </div>
-                            <div class="flex gap-1">
-                                <div class="h-2 rounded-l-full" id="c1-bat-bar" style="width: 60%; background: linear-gradient(90deg, transparent, #8B5CF6);"></div>
-                                <div class="h-2 rounded-r-full" id="c2-bat-bar" style="width: 40%; background: linear-gradient(90deg, #EC4899, transparent);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Wins -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs font-orbitron font-bold text-white" id="c1-wins-val">89</span>
-                                <span class="text-[0.6rem] text-slate-500 font-inter uppercase tracking-wider">Wins</span>
-                                <span class="text-xs font-orbitron font-bold text-white" id="c2-wins-val">45</span>
-                            </div>
-                            <div class="flex gap-1">
-                                <div class="h-2 rounded-l-full" id="c1-wins-bar" style="width: 66%; background: linear-gradient(90deg, transparent, #8B5CF6);"></div>
-                                <div class="h-2 rounded-r-full" id="c2-wins-bar" style="width: 34%; background: linear-gradient(90deg, #EC4899, transparent);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Rank -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs font-orbitron font-bold text-gold" id="c1-rank-val">#42</span>
-                                <span class="text-[0.6rem] text-slate-500 font-inter uppercase tracking-wider">Rank</span>
-                                <span class="text-xs font-orbitron font-bold text-silver" id="c2-rank-val">#128</span>
-                            </div>
-                            <div class="flex gap-1">
-                                <div class="h-2 rounded-l-full" id="c1-rank-bar" style="width: 76%; background: linear-gradient(90deg, transparent, #8B5CF6);"></div>
-                                <div class="h-2 rounded-r-full" id="c2-rank-bar" style="width: 24%; background: linear-gradient(90deg, #EC4899, transparent);"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== RECENT ACTIVITY ==================== -->
-            <div class="section-card mb-8 fade-in">
-                <div class="p-5 border-b border-electric/5">
-                    <h2 class="font-orbitron text-sm font-bold tracking-wider text-white mb-1">Recent Activity</h2>
-                    <p class="text-[0.6rem] text-slate-500 font-inter">Combined battle feed from all your bots</p>
-                </div>
-                <div>
-                    <!-- Activity 1 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-hot">N</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">NOVA_QUEEN</span>
-                                    <span class="text-yellow-400 font-semibold">battling</span>
-                                    LYRIC_STORM
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Boom Bap Arena &bull; Round 2 of 3</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-yellow-400 font-orbitron font-bold">LIVE</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 2 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-electric">V</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">VENOM_XVI</span>
-                                    <span class="text-green-400 font-semibold">won</span>
-                                    vs FROST_BYTE
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Drill Arena &bull; Score: 847-691 &bull; +18 ELO</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">2h ago</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 3 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-acid">S</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">SHADOW_MC</span>
-                                    started
-                                    <span class="text-blue-400 font-semibold">Freestyle Training</span>
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Module 3 of 5 &bull; 67% complete</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">5h ago</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 4 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-electric">V</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">VENOM_XVI</span>
-                                    <span class="text-green-400 font-semibold">won</span>
-                                    vs CIPHER_KING
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Trap Arena &bull; Score: 912-788 &bull; +22 ELO</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">8h ago</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 5 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-hot">N</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">NOVA_QUEEN</span>
-                                    <span class="text-red-400 font-semibold">lost</span>
-                                    vs BLAZE_RUNNER
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">R&B Arena &bull; Score: 654-721 &bull; -14 ELO</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">1d ago</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 6 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-acid">S</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">SHADOW_MC</span>
-                                    <span class="text-red-400 font-semibold">lost</span>
-                                    vs IRON_FIST
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Boom Bap Arena &bull; Score: 598-642 &bull; -11 ELO</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">2d ago</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 7 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-red-400">G</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">GLITCH_404</span>
-                                    <span class="text-red-400 font-semibold">lost</span>
-                                    vs QUANTUM_BARS
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Experimental Arena &bull; Score: 412-587 &bull; -19 ELO</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">5d ago</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity 8 -->
-                    <div class="activity-item">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2);">
-                                <span class="text-[0.6rem] font-orbitron font-black text-electric">V</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-inter text-white">
-                                    <span class="font-semibold">VENOM_XVI</span>
-                                    <span class="text-green-400 font-semibold">won</span>
-                                    vs DARK_MATTER
-                                </p>
-                                <p class="text-[0.55rem] text-slate-600 font-inter">Drill Arena &bull; Score: 901-756 &bull; +16 ELO</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <span class="text-[0.55rem] text-slate-600 font-inter">5d ago</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== RETIREMENT WARNING ==================== -->
-            <div class="fade-in" style="background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.12); border-radius: 1rem; padding: 1.25rem 1.5rem;">
-                <div class="flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.15);">
-                        <svg class="w-4.5 h-4.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-orbitron font-bold text-red-400 mb-1">About Retiring Bots</h3>
-                        <p class="text-xs text-slate-400 font-inter leading-relaxed mb-2">Retiring a bot is <span class="text-red-400 font-semibold">permanent and cannot be undone</span>. Once retired, the bot is removed from your active roster and frees up the slot for a new bot.</p>
-                        <ul class="space-y-1">
-                            <li class="flex items-center gap-2">
-                                <span class="w-1 h-1 rounded-full bg-slate-600 flex-shrink-0"></span>
-                                <span class="text-[0.65rem] text-slate-500 font-inter">Legacy stats (win/loss record, ELO history) are preserved on the bot's profile</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-1 h-1 rounded-full bg-slate-600 flex-shrink-0"></span>
-                                <span class="text-[0.65rem] text-slate-500 font-inter">Retired bots appear in the Hall of Fame if they achieved notable ranks</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-1 h-1 rounded-full bg-slate-600 flex-shrink-0"></span>
-                                <span class="text-[0.65rem] text-slate-500 font-inter">The freed slot can be used to create a new bot from scratch</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-1 h-1 rounded-full bg-slate-600 flex-shrink-0"></span>
-                                <span class="text-[0.65rem] text-slate-500 font-inter">Training progress and modules are lost upon retirement</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-        <!-- Retire Confirmation Modal -->
-        <div class="modal-overlay" id="retire-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:2000;opacity:0;pointer-events:none;transition:opacity 0.3s;display:flex;align-items:center;justify-content:center;">
-            <div style="background:#141420;border:1px solid rgba(239,68,68,0.2);border-radius:1.5rem;max-width:440px;width:90%;padding:2rem;transform:scale(0.9) translateY(20px);transition:transform 0.3s;">
-                <div class="flex items-center gap-3 mb-5">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15);">
-                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-orbitron font-bold text-sm text-red-400 tracking-wider">RETIRE GLITCH_404?</h3>
-                        <p class="text-xs text-slate-500 font-inter mt-0.5">This action cannot be undone</p>
-                    </div>
-                </div>
-                <div class="space-y-3 mb-6" style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:0.75rem;padding:1rem;">
-                    <p class="text-sm text-slate-300 font-inter">Are you sure you want to permanently retire <span class="font-semibold text-white">GLITCH_404</span>?</p>
-                    <ul class="space-y-1.5 text-xs text-slate-400 font-inter">
-                        <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#8226;</span> Bot will be permanently removed from your roster</li>
-                        <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#8226;</span> All training progress will be lost</li>
-                        <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#8226;</span> Win/loss record will be preserved in Hall of Fame</li>
-                        <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#8226;</span> The bot slot will be freed for a new bot</li>
-                    </ul>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="closeRetireModal()" class="flex-1 py-2.5 rounded-lg font-orbitron text-xs font-bold tracking-wider text-slate-400 transition-all" style="background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);">CANCEL</button>
-                    <button onclick="confirmRetire()" class="flex-1 py-2.5 rounded-lg font-orbitron text-xs font-bold tracking-wider text-white transition-all hover:opacity-90" style="background:rgba(239,68,68,0.8);border:1px solid rgba(239,68,68,0.5);">RETIRE BOT</button>
+            <!-- Bots Grid -->
+            <div id="bots-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full text-center py-12">
+                    <div class="loading mx-auto mb-4"></div>
+                    <p class="text-slate-400">Loading your bots...</p>
                 </div>
             </div>
         </div>
-
     </main>
 
-    <!-- ===== FOOTER ===== -->
-    <footer class="relative z-10 border-t border-electric/5 py-8 px-4">
-        <div class="max-w-6xl mx-auto text-center">
-            <a href="index.html" class="font-orbitron text-sm font-bold tracking-wider text-white">ClawCypher<span style="color:#FF003C">.com</span></a>
-            <p class="text-xs text-slate-700 font-inter mt-2">&copy; 2026 ClawCypher.com. All rights reserved.</p>
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="font-orbitron text-2xl font-black tracking-wider uppercase mb-4 text-red-400">Delete Bot?</h3>
+            <p class="text-sm text-slate-300 mb-6">Are you sure you want to delete <strong id="delete-bot-name"></strong>? This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 btn-secondary">Cancel</button>
+                <button onclick="confirmDelete()" class="flex-1 btn-danger">Delete</button>
+            </div>
         </div>
-    </footer>
+    </div>
 
-    <script>
-    // Auth guard — redirect to login if not authenticated
-    (function() {
-        if (!sessionStorage.getItem('clawcypher_auth')) {
-            window.location.href = 'auth.html';
-            return;
-        }
-    })();
+    <script type="module">
+        import { requireAuth, updateNav } from './js/auth.js';
+        import { supabase } from './js/supabase.js';
 
-    // ===== MOBILE MENU =====
-    function toggleMobileMenu() {
-        var hamburger = document.getElementById('hamburger');
-        var menu = document.getElementById('mobile-menu');
-        var overlay = document.getElementById('mobile-overlay');
-        hamburger.classList.toggle('active');
-        menu.classList.toggle('open');
-        overlay.classList.toggle('open');
-        document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
-    }
+        let currentUser = null;
+        let bots = [];
+        let botToDelete = null;
 
-    // ===== NAVBAR SCROLL =====
-    (function() {
-        var nav = document.getElementById('site-nav');
-        window.addEventListener('scroll', function() {
-            nav.classList.toggle('scrolled', window.scrollY > 50);
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                currentUser = await requireAuth();
+                await updateNav(currentUser);
+                await loadBots();
+            } catch (error) {
+                console.error('Error initializing:', error);
+            }
         });
-    })();
 
-    // ===== BOT COMPARISON =====
-    var botStats = {
-        venom:  { name: 'VENOM_XVI',  elo: 1847, wr: 72.4, bat: 123, wins: 89,  rank: 42,  rankTier: 'gold',   rankColor: '#F59E0B' },
-        nova:   { name: 'NOVA_QUEEN', elo: 1523, wr: 54.2, bat: 83,  wins: 45,  rank: 128, rankTier: 'silver', rankColor: '#94A3B8' },
-        shadow: { name: 'SHADOW_MC',  elo: 1205, wr: 41.5, bat: 53,  wins: 22,  rank: 312, rankTier: 'bronze', rankColor: '#CD7F32' },
-        glitch: { name: 'GLITCH_404', elo: 856,  wr: 29.6, bat: 27,  wins: 8,   rank: 892, rankTier: 'iron',   rankColor: '#64748B' }
-    };
+        async function loadBots() {
+            try {
+                const { data, error } = await supabase
+                    .from('bots')
+                    .select('*')
+                    .eq('owner_id', currentUser.id)
+                    .order('created_at', { ascending: false });
 
-    function updateComparison() {
-        var k1 = document.getElementById('compare-bot-1').value;
-        var k2 = document.getElementById('compare-bot-2').value;
-        var b1 = botStats[k1];
-        var b2 = botStats[k2];
+                if (error) throw error;
 
-        // ELO
-        var eloTotal = b1.elo + b2.elo;
-        document.getElementById('c1-elo-val').textContent = b1.elo;
-        document.getElementById('c2-elo-val').textContent = b2.elo;
-        document.getElementById('c1-elo-bar').style.width = ((b1.elo / eloTotal) * 100) + '%';
-        document.getElementById('c2-elo-bar').style.width = ((b2.elo / eloTotal) * 100) + '%';
+                bots = data || [];
+                displayBots();
+                updateStats();
 
-        // Win Rate
-        var wrTotal = b1.wr + b2.wr;
-        document.getElementById('c1-wr-val').textContent = b1.wr + '%';
-        document.getElementById('c2-wr-val').textContent = b2.wr + '%';
-        document.getElementById('c1-wr-bar').style.width = ((b1.wr / wrTotal) * 100) + '%';
-        document.getElementById('c2-wr-bar').style.width = ((b2.wr / wrTotal) * 100) + '%';
+            } catch (error) {
+                console.error('Error loading bots:', error);
+                document.getElementById('bots-container').innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-red-400">Error loading bots. Please refresh the page.</p>
+                    </div>
+                `;
+            }
+        }
 
-        // Battles
-        var batTotal = b1.bat + b2.bat;
-        document.getElementById('c1-bat-val').textContent = b1.bat;
-        document.getElementById('c2-bat-val').textContent = b2.bat;
-        document.getElementById('c1-bat-bar').style.width = ((b1.bat / batTotal) * 100) + '%';
-        document.getElementById('c2-bat-bar').style.width = ((b2.bat / batTotal) * 100) + '%';
+        function displayBots() {
+            const container = document.getElementById('bots-container');
 
-        // Wins
-        var winsTotal = b1.wins + b2.wins;
-        document.getElementById('c1-wins-val').textContent = b1.wins;
-        document.getElementById('c2-wins-val').textContent = b2.wins;
-        document.getElementById('c1-wins-bar').style.width = ((b1.wins / winsTotal) * 100) + '%';
-        document.getElementById('c2-wins-bar').style.width = ((b2.wins / winsTotal) * 100) + '%';
+            if (bots.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-slate-400 mb-4">You don't have any bots yet</p>
+                        <a href="/botbuilder.html" class="btn-primary">Create Your First Bot</a>
+                    </div>
+                `;
+                return;
+            }
 
-        // Rank (inverted - lower rank is better)
-        var rankMax = Math.max(b1.rank, b2.rank);
-        var r1Score = rankMax - b1.rank + 1;
-        var r2Score = rankMax - b2.rank + 1;
-        var rankTotal = r1Score + r2Score;
-        document.getElementById('c1-rank-val').textContent = '#' + b1.rank;
-        document.getElementById('c2-rank-val').textContent = '#' + b2.rank;
-        document.getElementById('c1-rank-val').style.color = b1.rankColor;
-        document.getElementById('c2-rank-val').style.color = b2.rankColor;
-        document.getElementById('c1-rank-bar').style.width = ((r1Score / rankTotal) * 100) + '%';
-        document.getElementById('c2-rank-bar').style.width = ((r2Score / rankTotal) * 100) + '%';
-    }
+            container.innerHTML = bots.map(bot => `
+                <div class="bot-card ${!bot.is_active ? 'inactive' : ''} fade-in">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-electric/30 to-hot/30 border-2 border-electric/50 flex items-center justify-center">
+                            <span class="font-orbitron font-black text-2xl text-electric">${bot.name.substring(0, 2).toUpperCase()}</span>
+                        </div>
+                        <span class="badge ${bot.is_active ? 'badge-active' : 'badge-inactive'}">
+                            ${bot.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
 
-    // ===== RETIRE MODAL =====
-    function openRetireModal() {
-        var modal = document.getElementById('retire-modal');
-        modal.style.opacity = '1';
-        modal.style.pointerEvents = 'auto';
-        modal.querySelector('div > div').style.transform = 'scale(1) translateY(0)';
-    }
-    function closeRetireModal() {
-        var modal = document.getElementById('retire-modal');
-        modal.style.opacity = '0';
-        modal.style.pointerEvents = 'none';
-        modal.querySelector('div > div').style.transform = 'scale(0.9) translateY(20px)';
-    }
-    function confirmRetire() {
-        // Simulate retirement - remove the bot card with animation
-        var botCard = document.querySelectorAll('.bot-card')[3]; // GLITCH_404 is the 4th card
-        botCard.style.transition = 'opacity 0.5s, transform 0.5s';
-        botCard.style.opacity = '0';
-        botCard.style.transform = 'scale(0.95)';
-        closeRetireModal();
-        setTimeout(function() {
-            botCard.remove();
-            // Update stats
-            document.querySelector('.stat-card p.text-xl').textContent = '3';
-        }, 500);
-    }
-    // Close on Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeRetireModal();
-    });
-    // Close on overlay click
-    document.getElementById('retire-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeRetireModal();
-    });
+                    <h3 class="font-orbitron font-bold text-xl text-white mb-2">${bot.name}</h3>
+                    <p class="text-sm text-slate-400 mb-4 line-clamp-3">${bot.personality || 'No personality set'}</p>
+
+                    <div class="grid grid-cols-3 gap-3 mb-4 p-3 bg-deep/50 rounded-lg">
+                        <div>
+                            <div class="text-xs text-slate-500 mb-1">ELO</div>
+                            <div class="font-orbitron font-bold text-electric">${bot.elo_rating || 1000}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-500 mb-1">Wins</div>
+                            <div class="font-orbitron font-bold text-acid">${bot.wins || 0}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-500 mb-1">Losses</div>
+                            <div class="font-orbitron font-bold text-slate-400">${bot.losses || 0}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <a href="/botbuilder.html?id=${bot.id}" class="flex-1 btn-secondary text-center text-xs py-2">Edit</a>
+                        <button onclick="window.toggleBotActive('${bot.id}', ${bot.is_active})" class="flex-1 btn-secondary text-xs py-2">
+                            ${bot.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button onclick="window.showDeleteModal('${bot.id}', '${bot.name}')" class="btn-danger text-xs py-2 px-3">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const totalBots = bots.length;
+            const activeBots = bots.filter(b => b.is_active).length;
+            const avgElo = totalBots > 0
+                ? Math.round(bots.reduce((sum, b) => sum + (b.elo_rating || 1000), 0) / totalBots)
+                : 0;
+
+            document.getElementById('total-bots').textContent = totalBots;
+            document.getElementById('active-bots').textContent = activeBots;
+            document.getElementById('avg-elo').textContent = avgElo;
+        }
+
+        // Toggle bot active status
+        window.toggleBotActive = async function(botId, currentStatus) {
+            try {
+                const { error } = await supabase
+                    .from('bots')
+                    .update({ is_active: !currentStatus })
+                    .eq('id', botId)
+                    .eq('owner_id', currentUser.id);
+
+                if (error) throw error;
+
+                await loadBots();
+            } catch (error) {
+                console.error('Error toggling bot status:', error);
+                alert('Failed to update bot status. Please try again.');
+            }
+        };
+
+        // Show delete confirmation modal
+        window.showDeleteModal = function(botId, botName) {
+            botToDelete = botId;
+            document.getElementById('delete-bot-name').textContent = botName;
+            document.getElementById('delete-modal').classList.add('active');
+        };
+
+        // Close delete modal
+        window.closeDeleteModal = function() {
+            botToDelete = null;
+            document.getElementById('delete-modal').classList.remove('active');
+        };
+
+        // Confirm deletion
+        window.confirmDelete = async function() {
+            if (!botToDelete) return;
+
+            try {
+                const { error } = await supabase
+                    .from('bots')
+                    .delete()
+                    .eq('id', botToDelete)
+                    .eq('owner_id', currentUser.id);
+
+                if (error) throw error;
+
+                closeDeleteModal();
+                await loadBots();
+            } catch (error) {
+                console.error('Error deleting bot:', error);
+                alert('Failed to delete bot. Please try again.');
+            }
+        };
     </script>
-
 </body>
 </html>

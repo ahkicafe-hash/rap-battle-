@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="description" content="Account settings for ClawCypher. Manage preferences and security.">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fwunwkiejqkrldvsubgf.supabase.co; frame-ancestors 'none';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0A0A0F">
     <meta name="robots" content="index, follow">
@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -501,7 +502,9 @@
                 <a href="credits.html" class="nav-link font-orbitron">Credits</a>
             </div>
             <div class="flex items-center gap-4">
-                <a href="auth.html" class="hidden md:inline-block px-4 py-2 bg-electric/10 border border-electric/30 text-electric font-orbitron text-xs tracking-wider rounded-lg hover:bg-electric/20 transition-colors">ENTER</a>
+                <div id="nav-actions" class="hidden md:flex items-center gap-3">
+                    <span class="text-sm text-slate-400">Loading...</span>
+                </div>
                 <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Toggle menu" aria-expanded="false">
                     <span></span><span></span><span></span>
                 </div>
@@ -663,7 +666,7 @@
 
                                 <!-- Save -->
                                 <div class="pt-2">
-                                    <button class="px-6 py-2.5 bg-electric rounded-lg text-sm font-orbitron font-bold text-white tracking-wider hover:bg-electric/80 transition-colors">Save Changes</button>
+                                    <button onclick="saveProfile()" class="px-6 py-2.5 bg-electric rounded-lg text-sm font-orbitron font-bold text-white tracking-wider hover:bg-electric/80 transition-colors">Save Changes</button>
                                 </div>
                             </div>
                         </div>
@@ -1251,14 +1254,79 @@
         </div>
     </footer>
 
-    <script>
-    // Auth guard — redirect to login if not authenticated
-    (function() {
-        if (!sessionStorage.getItem('clawcypher_auth')) {
-            window.location.href = 'auth.html';
-            return;
+    <script type="module">
+    import { requireAuth, updateNav, getUserProfile } from './js/auth.js';
+    import { supabase } from './js/supabase.js';
+
+    let currentUser = null;
+    let userProfile = null;
+
+    // Auth guard and initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            currentUser = await requireAuth();
+            await updateNav(currentUser);
+            userProfile = await getUserProfile(currentUser.id);
+
+            // Load user data into form
+            loadUserData();
+        } catch (error) {
+            console.error('Error initializing:', error);
         }
-    })();
+    });
+
+    function loadUserData() {
+        if (!userProfile) return;
+
+        // Avatar initials
+        const initials = (userProfile.username || 'U').substring(0, 2).toUpperCase();
+        document.querySelector('.avatar-upload-inner').firstChild.textContent = initials;
+
+        // Profile fields
+        document.querySelector('input[value="VENOM_MASTER"]').value = userProfile.username || '';
+        document.querySelector('input[value="Venom Master"]').value = userProfile.display_name || userProfile.username || '';
+        document.getElementById('bio-textarea').value = userProfile.bio || '';
+        updateBioCounter();
+
+        // Email (masked)
+        if (userProfile.email) {
+            const email = userProfile.email;
+            const atIndex = email.indexOf('@');
+            const masked = email.substring(0, 1) + '***' + email.substring(atIndex);
+            document.querySelector('p:contains("v***@gmail.com")');
+            const emailElement = Array.from(document.querySelectorAll('p')).find(p => p.textContent.includes('@gmail.com'));
+            if (emailElement) emailElement.textContent = masked;
+        }
+    }
+
+    // Save profile changes
+    window.saveProfile = async function() {
+        const username = document.querySelector('input[value*="' + (userProfile?.username || '') + '"]').value;
+        const displayName = document.querySelector('input[placeholder="Display Name"], input[value="Venom Master"]').value;
+        const bio = document.getElementById('bio-textarea').value;
+
+        try {
+            const { error } = await supabase
+                .from('users')
+                .update({
+                    display_name: displayName,
+                    bio: bio
+                })
+                .eq('id', currentUser.id);
+
+            if (error) throw error;
+
+            alert('Profile updated successfully!');
+            location.reload();
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('Failed to save profile. Please try again.');
+        }
+    };
+    </script>
+    <script>
+    // Auth guard fallback (replaced by module above)
+    // Kept for compatibility
 
     // ===== MOBILE MENU =====
     function toggleMobileMenu() {
