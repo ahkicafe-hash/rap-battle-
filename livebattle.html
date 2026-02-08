@@ -378,11 +378,25 @@
             const currentRound = battleData.current_round || 1;
             document.getElementById('round-title').textContent = `Round ${currentRound}`;
 
-            // Show DJ commentary and generate audio
+            // Show DJ commentary (audio generated locally)
             if (battleData.dj_commentary) {
                 document.getElementById('dj-commentary-text').textContent = battleData.dj_commentary;
-                // Generate DJ audio (non-blocking)
-                generateDJAudio(battleData.dj_commentary);
+
+                // Show "Listen" button instead of auto-generating
+                const djAudioContainer = document.getElementById('dj-audio-container');
+                djAudioContainer.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gold/20 border-2 border-gold/50 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                                <polygon points="8,5 19,12 8,19"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-bold text-gold mb-1">DJ Claudius Commentary</div>
+                            <div class="text-xs text-gold/60">Read the transcript below</div>
+                        </div>
+                    </div>
+                `;
             }
 
             // Show battle arena
@@ -582,147 +596,9 @@
             }
         };
 
-        // Generate DJ Claudius commentary audio
-        async function generateDJAudio(commentary) {
-            try {
-                const response = await fetch('/api/generate-audio', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        text: commentary,
-                        voice: 'dj-claudius'
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('DJ audio generation failed');
-                }
-
-                const data = await response.json();
-
-                if (data.status === 'ready' && data.audio_url) {
-                    showDJAudioPlayer(data.audio_url);
-                } else if (data.status === 'processing' && data.prediction_id) {
-                    pollDJAudioStatus(data.prediction_id);
-                }
-            } catch (error) {
-                console.error('Error generating DJ audio:', error);
-                showDJAudioError();
-            }
-        }
-
-        // Poll for DJ audio completion
-        async function pollDJAudioStatus(predictionId) {
-            const POLL_INTERVAL = 5000;
-            const MAX_POLLS = 30;
-
-            for (let i = 0; i < MAX_POLLS; i++) {
-                await delay(POLL_INTERVAL);
-
-                try {
-                    const response = await fetch(`/api/audio-status?prediction_id=${predictionId}`);
-                    if (!response.ok) continue;
-
-                    const data = await response.json();
-
-                    if (data.status === 'ready' && data.audio_url) {
-                        showDJAudioPlayer(data.audio_url);
-                        return;
-                    }
-
-                    if (data.status === 'failed') {
-                        showDJAudioError();
-                        return;
-                    }
-                } catch (error) {
-                    console.warn('DJ audio poll error:', error);
-                }
-            }
-
-            showDJAudioError();
-        }
-
-        // Show DJ audio player
-        function showDJAudioPlayer(audioUrl) {
-            const container = document.getElementById('dj-audio-container');
-            if (container) {
-                container.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <button onclick="toggleDJAudio('${audioUrl}')" class="w-12 h-12 rounded-full bg-gold/20 hover:bg-gold/30 border-2 border-gold/50 flex items-center justify-center transition-all shadow-lg" id="dj-play-btn">
-                            <svg class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
-                                <polygon points="8,5 19,12 8,19"/>
-                            </svg>
-                        </button>
-                        <div class="flex-1">
-                            <div class="text-sm font-bold text-gold mb-1">Press Play to Hear DJ Claudius</div>
-                            <div class="flex gap-1">
-                                ${Array(25).fill(0).map((_, i) => `<span style="height:${Math.random() * 16 + 4}px" class="inline-block w-1 bg-gold/40 rounded"></span>`).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Show DJ audio error
-        function showDJAudioError() {
-            const container = document.getElementById('dj-audio-container');
-            if (container) {
-                container.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                        <div class="text-sm text-red-400">Failed to generate DJ audio</div>
-                    </div>
-                `;
-            }
-        }
-
-        // Toggle DJ audio playback
-        let djAudio = null;
-        window.toggleDJAudio = function(audioUrl) {
-            const button = document.getElementById('dj-play-btn');
-            const icon = button.querySelector('svg');
-
-            if (djAudio && !djAudio.paused) {
-                djAudio.pause();
-                djAudio.currentTime = 0;
-                icon.innerHTML = '<polygon points="8,5 19,12 8,19"/>';
-                djAudio = null;
-                return;
-            }
-
-            // Stop any playing verse audio
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-                if (currentButton) {
-                    const prevIcon = currentButton.querySelector('svg');
-                    prevIcon.innerHTML = '<polygon points="8,5 19,12 8,19"/>';
-                }
-                currentAudio = null;
-                currentButton = null;
-            }
-
-            djAudio = new Audio(audioUrl);
-            djAudio.play().catch(err => {
-                console.error('Error playing DJ audio:', err);
-                alert('Failed to play DJ audio');
-                icon.innerHTML = '<polygon points="8,5 19,12 8,19"/>';
-            });
-
-            icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
-
-            djAudio.onended = function() {
-                icon.innerHTML = '<polygon points="8,5 19,12 8,19"/>';
-                djAudio = null;
-            };
-        };
+        // DJ Claudius audio is generated locally using Qwen TTS
+        // Use the generate-dj-audio.sh script to create audio files
+        // and place them in the audio/ folder
 
         async function showWinner(bot1Score, bot2Score) {
             const winnerSection = document.getElementById('winner-section');

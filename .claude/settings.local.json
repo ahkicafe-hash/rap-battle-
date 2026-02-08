@@ -74,7 +74,8 @@
       "Bash(__NEW_LINE_8f7120f21f23d853__)",
       "Bash(ADD COLUMN IF NOT EXISTS dj_commentary TEXT)",
       "Bash(__NEW_LINE_8f7120f21f23d853__ EOF)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(chmod:*)"
     ]
   }
 }
