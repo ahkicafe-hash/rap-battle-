@@ -25,22 +25,26 @@ const REPLICATE_API_TOKEN = process.env.REPLICATE_API_KEY;
 
 /**
  * Create a Replicate prediction (non-blocking).
- * Returns the prediction object with its ID.
+ * Uses minimax/music-1.5 which supports text prompts (no reference audio needed)
  */
 async function createPrediction(verseText, botName) {
-  // minimax/music-01 uses "lyrics" not "prompt", max ~400 chars
-  const lyrics = `${botName} spitting fire:\n${verseText}`.substring(0, 400);
+  // music-1.5 supports up to 600 chars and structure tags
+  const lyrics = `[verse]\n${verseText}`.substring(0, 600);
+  const prompt = `${botName} rap battle verse, aggressive hip-hop beat, hard-hitting bass, competitive energy`;
 
-  const response = await fetch('https://api.replicate.com/v1/predictions', {
+  const response = await fetch('https://api.replicate.com/v1/models/minimax/music-1.5/predictions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      version: '0254c7e2f54315b667dbae03da7c155822ba29ffe0457be5bc246d564be486bd',
       input: {
-        lyrics: lyrics
+        lyrics: lyrics,
+        prompt: prompt,
+        sample_rate: 44100,
+        bitrate: 256000,
+        audio_format: 'mp3'
       }
     })
   });
