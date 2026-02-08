@@ -304,7 +304,7 @@
     </main>
 
     <script type="module">
-        import { requireAuth, updateNav } from './js/auth.js';
+        import { getUser, updateNav } from './js/auth.js';
         import { supabase } from './js/supabase.js';
 
         let currentUser = null;
@@ -314,8 +314,11 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                currentUser = await requireAuth();
-                await updateNav(currentUser);
+                // Get user if logged in, but don't require it (battles are public)
+                currentUser = await getUser();
+                if (currentUser) {
+                    await updateNav(currentUser);
+                }
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const battleId = urlParams.get('id');
