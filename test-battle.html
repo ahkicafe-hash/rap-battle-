@@ -11,10 +11,16 @@
   <div class="container mx-auto px-4 py-8">
     <h1 class="text-4xl font-bold mb-8 text-center">🎤 Battle Engine Test</h1>
 
+    <!-- Debug Console -->
+    <div class="bg-black p-4 rounded-lg mb-8 font-mono text-sm">
+      <h3 class="text-green-400 font-bold mb-2">Console Log:</h3>
+      <div id="console" class="text-gray-400 max-h-40 overflow-y-auto"></div>
+    </div>
+
     <!-- Create Test Bots -->
     <div class="bg-gray-800 p-6 rounded-lg mb-8">
       <h2 class="text-2xl font-bold mb-4">1. Create Test Bots</h2>
-      <button onclick="createTestBots()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold">
+      <button onclick="createTestBots()" id="create-btn" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed">
         Create 2 Test Bots
       </button>
       <div id="bots-status" class="mt-4"></div>
@@ -23,9 +29,18 @@
     <!-- Run Battle -->
     <div class="bg-gray-800 p-6 rounded-lg mb-8">
       <h2 class="text-2xl font-bold mb-4">2. Run Battle</h2>
-      <button onclick="runBattle()" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded font-bold" disabled id="battle-btn">
-        Start Battle
+      <button onclick="runBattle()" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed" disabled id="battle-btn">
+        Start Battle ⚔️
       </button>
+
+      <!-- Progress Bar -->
+      <div id="progress-container" class="hidden mt-4">
+        <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
+          <div id="progress-bar" class="bg-red-600 h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <p id="progress-text" class="text-sm text-gray-400 mt-2">Initializing...</p>
+      </div>
+
       <div id="battle-status" class="mt-4"></div>
     </div>
 
@@ -39,6 +54,16 @@
   </div>
 
   <script>
+    // Console logging
+    function log(message, type = 'info') {
+      const console = document.getElementById('console');
+      const time = new Date().toLocaleTimeString();
+      const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-gray-400';
+      console.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+      console.scrollTop = console.scrollHeight;
+      window.console.log(message);
+    }
+
     const supabase = window.supabase.createClient(
       'https://fwunwkiejqkrldvsubgf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
@@ -46,12 +71,20 @@
 
     let testBots = [];
 
+    log('Page loaded. Ready to create bots.');
+
     async function createTestBots() {
       const status = document.getElementById('bots-status');
+      const btn = document.getElementById('create-btn');
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
       status.innerHTML = '<p class="text-yellow-400">Creating test bots...</p>';
+      log('Creating test bots...');
 
       try {
         // Create test user first
+        log('Step 1: Creating test user...');
         const { data: user, error: userError } = await supabase
           .from('users')
           .insert({
@@ -68,8 +101,10 @@
         }
 
         const userId = user?.id || (await supabase.from('users').select('id').eq('email', 'test@clawcypher.com').single()).data.id;
+        log(`User ID: ${userId}`, 'success');
 
         // Create two test bots
+        log('Step 2: Creating bots...');
         const { data: bots, error: botsError } = await supabase
           .from('bots')
           .insert([
@@ -93,6 +128,7 @@
         if (botsError) throw botsError;
 
         testBots = bots;
+        log(`✅ Bots created! IDs: ${bots[0].id}, ${bots[1].id}`, 'success');
 
         status.innerHTML = `
           <div class="text-green-400">
@@ -102,10 +138,15 @@
           </div>
         `;
 
+        btn.textContent = '✓ Bots Created';
         document.getElementById('battle-btn').disabled = false;
+
       } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
         status.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-        console.error(error);
+        btn.disabled = false;
+        btn.textContent = 'Retry Create Bots';
+        window.console.error(error);
       }
     }
 
@@ -118,13 +159,41 @@
       const status = document.getElementById('battle-status');
       const results = document.getElementById('battle-results');
       const resultsContent = document.getElementById('results-content');
+      const progressContainer = document.getElementById('progress-container');
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+      const btn = document.getElementById('battle-btn');
 
-      status.innerHTML = '<p class="text-yellow-400">⚔️ Battle starting... This takes ~30 seconds (AI is generating verses)...</p>';
+      btn.disabled = true;
+      btn.textContent = 'Battle in Progress...';
+      progressContainer.classList.remove('hidden');
       results.classList.add('hidden');
-      document.getElementById('battle-btn').disabled = true;
+
+      log('🎤 Starting battle...');
+      log(`Bot 1: ${testBots[0].name} (ID: ${testBots[0].id})`);
+      log(`Bot 2: ${testBots[1].name} (ID: ${testBots[1].id})`);
+
+      // Simulate progress
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += 3;
+        if (progress >= 90) {
+          clearInterval(progressInterval);
+        }
+        progressBar.style.width = progress + '%';
+
+        if (progress < 30) {
+          progressText.textContent = 'Generating opening verses...';
+        } else if (progress < 60) {
+          progressText.textContent = 'AI creating comebacks...';
+        } else {
+          progressText.textContent = 'Generating final verses...';
+        }
+      }, 1000);
 
       try {
-        const response = await fetch('https://www.clawcypher.com/api/battle', {
+        log('Calling /api/battle...');
+        const response = await fetch('/api/battle', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -135,12 +204,20 @@
           })
         });
 
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressText.textContent = 'Battle complete!';
+
+        log(`API Response status: ${response.status}`);
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Battle failed');
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
         const battle = await response.json();
+        log('✅ Battle complete!', 'success');
+        log(`Winner: ${battle.is_draw ? 'DRAW' : (battle.winner_id === testBots[0].id ? testBots[0].name : testBots[1].name)}`);
 
         status.innerHTML = '<p class="text-green-400">✅ Battle complete!</p>';
         results.classList.remove('hidden');
@@ -174,11 +251,11 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="bg-gray-700 p-4 rounded">
                   <p class="font-bold text-blue-400">${testBots[0].name} (Score: ${round.bot1_score}/10)</p>
-                  <p class="italic mt-2">"${round.bot1_verse}"</p>
+                  <p class="italic mt-2 text-sm">"${round.bot1_verse}"</p>
                 </div>
                 <div class="bg-gray-700 p-4 rounded">
                   <p class="font-bold text-red-400">${testBots[1].name} (Score: ${round.bot2_score}/10)</p>
-                  <p class="italic mt-2">"${round.bot2_verse}"</p>
+                  <p class="italic mt-2 text-sm">"${round.bot2_verse}"</p>
                 </div>
               </div>
             </div>
@@ -186,12 +263,18 @@
         });
 
         resultsContent.innerHTML = html;
-        document.getElementById('battle-btn').disabled = false;
+        btn.disabled = false;
+        btn.textContent = 'Start Another Battle ⚔️';
+        progressContainer.classList.add('hidden');
 
       } catch (error) {
+        clearInterval(progressInterval);
+        log(`❌ Battle failed: ${error.message}`, 'error');
         status.innerHTML = `<p class="text-red-400">❌ Error: ${error.message}</p>`;
-        console.error(error);
-        document.getElementById('battle-btn').disabled = false;
+        btn.disabled = false;
+        btn.textContent = 'Retry Battle ⚔️';
+        progressContainer.classList.add('hidden');
+        window.console.error(error);
       }
     }
   </script>
