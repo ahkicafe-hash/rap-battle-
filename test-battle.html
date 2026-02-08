@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battle Engine Test - ClawCypher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-8 text-center">🎤 Battle Engine Test</h1>
+
+    <!-- Create Test Bots -->
+    <div class="bg-gray-800 p-6 rounded-lg mb-8">
+      <h2 class="text-2xl font-bold mb-4">1. Create Test Bots</h2>
+      <button onclick="createTestBots()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold">
+        Create 2 Test Bots
+      </button>
+      <div id="bots-status" class="mt-4"></div>
+    </div>
+
+    <!-- Run Battle -->
+    <div class="bg-gray-800 p-6 rounded-lg mb-8">
+      <h2 class="text-2xl font-bold mb-4">2. Run Battle</h2>
+      <button onclick="runBattle()" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded font-bold" disabled id="battle-btn">
+        Start Battle
+      </button>
+      <div id="battle-status" class="mt-4"></div>
+    </div>
+
+    <!-- Battle Results -->
+    <div id="battle-results" class="hidden">
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h2 class="text-2xl font-bold mb-4">🏆 Battle Results</h2>
+        <div id="results-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://fwunwkiejqkrldvsubgf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
+    );
+
+    let testBots = [];
+
+    async function createTestBots() {
+      const status = document.getElementById('bots-status');
+      status.innerHTML = '<p class="text-yellow-400">Creating test bots...</p>';
+
+      try {
+        // Create test user first
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .insert({
+            email: 'test@clawcypher.com',
+            username: 'TestUser',
+            credits: 10000,
+            elo_rating: 1000
+          })
+          .select()
+          .single();
+
+        if (userError && !userError.message.includes('duplicate')) {
+          throw userError;
+        }
+
+        const userId = user?.id || (await supabase.from('users').select('id').eq('email', 'test@clawcypher.com').single()).data.id;
+
+        // Create two test bots
+        const { data: bots, error: botsError } = await supabase
+          .from('bots')
+          .insert([
+            {
+              owner_id: userId,
+              name: 'MC Thunder',
+              personality: 'aggressive and intense',
+              voice_style: 'deep and powerful',
+              elo_rating: 1000
+            },
+            {
+              owner_id: userId,
+              name: 'Lyric Storm',
+              personality: 'witty and clever',
+              voice_style: 'smooth and calculated',
+              elo_rating: 1000
+            }
+          ])
+          .select();
+
+        if (botsError) throw botsError;
+
+        testBots = bots;
+
+        status.innerHTML = `
+          <div class="text-green-400">
+            <p class="font-bold">✅ Test bots created!</p>
+            <p>Bot 1: ${bots[0].name} (${bots[0].personality})</p>
+            <p>Bot 2: ${bots[1].name} (${bots[1].personality})</p>
+          </div>
+        `;
+
+        document.getElementById('battle-btn').disabled = false;
+      } catch (error) {
+        status.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+        console.error(error);
+      }
+    }
+
+    async function runBattle() {
+      if (testBots.length !== 2) {
+        alert('Create test bots first!');
+        return;
+      }
+
+      const status = document.getElementById('battle-status');
+      const results = document.getElementById('battle-results');
+      const resultsContent = document.getElementById('results-content');
+
+      status.innerHTML = '<p class="text-yellow-400">⚔️ Battle starting... This takes ~30 seconds (AI is generating verses)...</p>';
+      results.classList.add('hidden');
+      document.getElementById('battle-btn').disabled = true;
+
+      try {
+        const response = await fetch('https://www.clawcypher.com/api/battle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            bot1_id: testBots[0].id,
+            bot2_id: testBots[1].id
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Battle failed');
+        }
+
+        const battle = await response.json();
+
+        status.innerHTML = '<p class="text-green-400">✅ Battle complete!</p>';
+        results.classList.remove('hidden');
+
+        // Display results
+        let html = `
+          <div class="mb-6">
+            <h3 class="text-xl font-bold mb-2">
+              ${battle.is_draw ? '🤝 DRAW!' : `🏆 Winner: ${battle.winner_id === testBots[0].id ? testBots[0].name : testBots[1].name}!`}
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="font-bold">${battle.bot1.name}</p>
+                <p>Score: ${battle.bot1.score}/30</p>
+                <p>ELO: ${battle.bot1.new_elo} (${battle.bot1.elo_change > 0 ? '+' : ''}${battle.bot1.elo_change})</p>
+              </div>
+              <div>
+                <p class="font-bold">${battle.bot2.name}</p>
+                <p>Score: ${battle.bot2.score}/30</p>
+                <p>ELO: ${battle.bot2.new_elo} (${battle.bot2.elo_change > 0 ? '+' : ''}${battle.bot2.elo_change})</p>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Display rounds
+        battle.rounds.forEach((round, i) => {
+          html += `
+            <div class="mb-6 border-t border-gray-700 pt-4">
+              <h4 class="text-lg font-bold mb-3">Round ${i + 1}</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-700 p-4 rounded">
+                  <p class="font-bold text-blue-400">${testBots[0].name} (Score: ${round.bot1_score}/10)</p>
+                  <p class="italic mt-2">"${round.bot1_verse}"</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded">
+                  <p class="font-bold text-red-400">${testBots[1].name} (Score: ${round.bot2_score}/10)</p>
+                  <p class="italic mt-2">"${round.bot2_verse}"</p>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        resultsContent.innerHTML = html;
+        document.getElementById('battle-btn').disabled = false;
+
+      } catch (error) {
+        status.innerHTML = `<p class="text-red-400">❌ Error: ${error.message}</p>`;
+        console.error(error);
+        document.getElementById('battle-btn').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
