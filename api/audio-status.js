@@ -1,0 +1,150 @@
+/**
+ * Audio Status Checker
+ * Vercel Serverless Function
+ *
+ * GET /api/audio-status?verse_id=xxx
+ *
+ * Checks if audio generation is complete for a given verse.
+ * If the verse has a "pending:<prediction_id>" audio_url, this endpoint
+ * checks the Replicate prediction status and updates the DB when done.
+ *
+ * Returns:
+ *   { status: "ready", audio_url: "https://..." }     -- audio is done
+ *   { status: "processing" }                           -- still generating
+ *   { status: "failed", error: "..." }                 -- generation failed
+ *   { status: "no_audio" }                             -- no audio requested yet
+ */
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_KEY;
+
+/**
+ * Check a Replicate prediction's status
+ */
+async function checkPrediction(predictionId) {
+  const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+    headers: {
+      'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Replicate API error (${response.status})`);
+  }
+
+  return response.json();
+}
+
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { verse_id } = req.query;
+
+    if (!verse_id) {
+      return res.status(400).json({ error: 'Missing verse_id query parameter' });
+    }
+
+    // Fetch verse from database
+    const { data: verse, error: verseError } = await supabase
+      .from('battle_verses')
+      .select('id, audio_url')
+      .eq('id', verse_id)
+      .single();
+
+    if (verseError || !verse) {
+      return res.status(404).json({ error: 'Verse not found' });
+    }
+
+    // Case 1: No audio URL at all -- nothing has been requested yet
+    if (!verse.audio_url) {
+      return res.status(200).json({ status: 'no_audio' });
+    }
+
+    // Case 2: Real audio URL (not a pending prediction) -- already done
+    if (!verse.audio_url.startsWith('pending:')) {
+      return res.status(200).json({
+        status: 'ready',
+        audio_url: verse.audio_url
+      });
+    }
+
+    // Case 3: Pending prediction -- check Replicate status
+    const predictionId = verse.audio_url.replace('pending:', '');
+    const prediction = await checkPrediction(predictionId);
+
+    if (prediction.status === 'succeeded') {
+      // Extract the audio URL from the prediction output
+      // Replicate's minimax/music-01 returns the URL directly as output
+      const audioUrl = typeof prediction.output === 'string'
+        ? prediction.output
+        : (prediction.output?.audio || prediction.output?.[0] || prediction.output);
+
+      if (!audioUrl || typeof audioUrl !== 'string') {
+        console.error('Unexpected prediction output format:', prediction.output);
+        return res.status(200).json({
+          status: 'failed',
+          error: 'Unexpected audio output format from Replicate'
+        });
+      }
+
+      // Update the database with the real audio URL
+      const { error: updateError } = await supabase
+        .from('battle_verses')
+        .update({ audio_url: audioUrl })
+        .eq('id', verse_id);
+
+      if (updateError) {
+        console.error('Error updating verse audio_url:', updateError);
+      }
+
+      return res.status(200).json({
+        status: 'ready',
+        audio_url: audioUrl
+      });
+    }
+
+    if (prediction.status === 'failed' || prediction.status === 'canceled') {
+      // Clear the pending marker so it can be retried
+      await supabase
+        .from('battle_verses')
+        .update({ audio_url: null })
+        .eq('id', verse_id);
+
+      return res.status(200).json({
+        status: 'failed',
+        error: prediction.error || 'Audio generation failed or was canceled'
+      });
+    }
+
+    // Still processing (status: 'starting' or 'processing')
+    return res.status(200).json({
+      status: 'processing',
+      prediction_status: prediction.status
+    });
+
+  } catch (error) {
+    console.error('Audio status check error:', error);
+    return res.status(500).json({
+      error: 'Status check failed',
+      message: error.message
+    });
+  }
+}

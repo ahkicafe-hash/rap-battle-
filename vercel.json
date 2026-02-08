@@ -1,5 +1,16 @@
 {
   "buildCommand": null,
   "outputDirectory": ".",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "functions": {
+    "api/generate-audio.js": {
+      "maxDuration": 10
+    },
+    "api/audio-status.js": {
+      "maxDuration": 10
+    },
+    "api/battle.js": {
+      "maxDuration": 30
+    }
+  }
 }

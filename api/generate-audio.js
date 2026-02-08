@@ -1,51 +1,57 @@
 /**
- * Generate Audio for Battle Verse
+ * Generate Audio for Battle Verse (Async)
  * Vercel Serverless Function
  *
  * POST /api/generate-audio
  * Body: { verse_id: string }
  *
- * Generates audio for a specific verse using Replicate MiniMax
+ * Creates a Replicate prediction for audio generation and returns immediately.
+ * The prediction ID is stored in the verse's audio_url field as a placeholder
+ * (prefixed with "pending:"). The frontend should poll /api/audio-status to
+ * check when the audio is ready.
+ *
+ * This avoids Vercel's 10s (Hobby) / 60s (Pro) function timeout by NOT
+ * waiting for the audio generation to complete.
  */
 
 import { createClient } from '@supabase/supabase-js';
-import Replicate from 'replicate';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_KEY,
-});
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_KEY;
 
 /**
- * Generate audio using MiniMax music generation
+ * Create a Replicate prediction (non-blocking).
+ * Returns the prediction object with its ID.
  */
-async function generateAudio(verseText, botName) {
-  try {
-    console.log(`🎵 Generating audio for ${botName}...`);
+async function createPrediction(verseText, botName) {
+  const musicPrompt = `${botName} performing a rap verse: ${verseText}. Hip-hop beat with clear vocals.`;
 
-    const musicPrompt = `${botName} performing a rap verse: ${verseText}. Hip-hop beat with clear vocals.`;
-
-    const output = await replicate.run(
-      "minimax/music-01",
-      {
-        input: {
-          prompt: musicPrompt,
-          duration: 15 // 15 seconds for a 4-line verse
-        }
+  const response = await fetch('https://api.replicate.com/v1/predictions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'respond-async'
+    },
+    body: JSON.stringify({
+      version: 'minimax/music-01',
+      input: {
+        prompt: musicPrompt,
+        duration: 15
       }
-    );
+    })
+  });
 
-    console.log(`✅ Audio generated: ${output}`);
-    return output; // Returns audio URL
-
-  } catch (error) {
-    console.error(`❌ Error generating audio:`, error);
-    throw error;
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Replicate API error (${response.status}): ${errorBody}`);
   }
+
+  return response.json();
 }
 
 /**
@@ -83,39 +89,53 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Verse not found' });
     }
 
-    // Check if audio already exists
-    if (verse.audio_url) {
+    // If audio already exists and is a real URL (not a pending prediction), return it
+    if (verse.audio_url && !verse.audio_url.startsWith('pending:')) {
       return res.status(200).json({
         success: true,
         audio_url: verse.audio_url,
+        status: 'ready',
         cached: true
       });
     }
 
-    // Generate audio
-    const audioUrl = await generateAudio(verse.verse_text, verse.bot.name);
-
-    if (!audioUrl) {
-      throw new Error('Failed to generate audio');
+    // If a prediction is already in progress, return that status
+    if (verse.audio_url && verse.audio_url.startsWith('pending:')) {
+      const predictionId = verse.audio_url.replace('pending:', '');
+      return res.status(200).json({
+        success: true,
+        status: 'processing',
+        prediction_id: predictionId,
+        message: 'Audio generation already in progress. Poll /api/audio-status for updates.'
+      });
     }
 
-    // Update verse with audio URL
+    // Create a new prediction (non-blocking)
+    console.log(`Creating audio prediction for ${verse.bot.name} (verse ${verse_id})...`);
+    const prediction = await createPrediction(verse.verse_text, verse.bot.name);
+
+    if (!prediction.id) {
+      throw new Error('No prediction ID returned from Replicate');
+    }
+
+    console.log(`Prediction created: ${prediction.id}`);
+
+    // Store the prediction ID as a placeholder in the audio_url field
     const { error: updateError } = await supabase
       .from('battle_verses')
-      .update({ audio_url: audioUrl })
+      .update({ audio_url: `pending:${prediction.id}` })
       .eq('id', verse_id);
 
     if (updateError) {
-      console.error('Error updating verse:', updateError);
-      throw updateError;
+      console.error('Error storing prediction ID:', updateError);
+      // Don't throw -- the prediction is still running, just log it
     }
 
-    console.log(`✅ Audio saved for verse ${verse_id}`);
-
-    return res.status(200).json({
+    return res.status(202).json({
       success: true,
-      audio_url: audioUrl,
-      cached: false
+      status: 'processing',
+      prediction_id: prediction.id,
+      message: 'Audio generation started. Poll /api/audio-status for updates.'
     });
 
   } catch (error) {

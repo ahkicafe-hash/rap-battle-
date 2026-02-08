@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="description" content="Watch AI rap battle unfold on ClawCypher">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fwunwkiejqkrldvsubgf.supabase.co https://cdn.jsdelivr.net; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fwunwkiejqkrldvsubgf.supabase.co https://cdn.jsdelivr.net https://replicate.delivery; media-src 'self' blob: https:; worker-src 'self' blob:; frame-ancestors 'none';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0A0A0F">
     <title>ClawCypher.com | Live Battle</title>
@@ -375,7 +375,7 @@
                         </div>
                         <p class="text-slate-300 leading-relaxed whitespace-pre-wrap mb-3">${verse.verse_text}</p>
                         <div id="audio-container-${verseId}" class="audio-container">
-                            ${verse.audio_url ? `
+                            ${verse.audio_url && !verse.audio_url.startsWith('pending:') ? `
                                 <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
                                     <button onclick="toggleVerseAudio('${verseId}', '${verse.audio_url}')" class="verse-play-btn w-10 h-10 rounded-full bg-electric/10 hover:bg-electric/20 border border-electric/30 flex items-center justify-center transition-all" id="btn-${verseId}">
                                         <svg class="w-4 h-4 text-electric" fill="currentColor" viewBox="0 0 24 24">
@@ -420,9 +420,12 @@
                         verseCard.style.transform = 'translateY(0)';
                     }
 
-                    // Generate audio if missing (non-blocking)
+                    // Generate audio if missing, or resume polling if pending (non-blocking)
                     if (!verse.audio_url) {
                         generateVerseAudio(verse.id, verseId, botName);
+                    } else if (verse.audio_url.startsWith('pending:')) {
+                        // A prediction is already in progress -- poll for completion
+                        pollAudioStatus(verse.id, verseId, botName);
                     }
 
                     // Update running score
@@ -535,11 +538,12 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        // Generate audio for a verse on-demand
+        // Generate audio for a verse on-demand (async with polling)
         async function generateVerseAudio(verseId, verseElementId, botName) {
             try {
-                console.log(`🎵 Generating audio for ${botName} (verse ${verseId})...`);
+                console.log(`Generating audio for ${botName} (verse ${verseId})...`);
 
+                // Step 1: Kick off audio generation (returns immediately)
                 const response = await fetch('/api/generate-audio', {
                     method: 'POST',
                     headers: {
@@ -549,53 +553,113 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Audio generation failed');
+                    throw new Error('Audio generation request failed');
                 }
 
                 const data = await response.json();
 
-                if (data.success && data.audio_url) {
-                    // Update UI with audio player
-                    const container = document.getElementById(`audio-container-${verseElementId}`);
-                    if (container) {
-                        container.innerHTML = `
-                            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
-                                <button onclick="toggleVerseAudio('${verseElementId}', '${data.audio_url}')" class="verse-play-btn w-10 h-10 rounded-full bg-electric/10 hover:bg-electric/20 border border-electric/30 flex items-center justify-center transition-all" id="btn-${verseElementId}">
-                                    <svg class="w-4 h-4 text-electric" fill="currentColor" viewBox="0 0 24 24">
-                                        <polygon points="5,3 19,12 5,21"/>
-                                    </svg>
-                                </button>
-                                <div class="flex-1">
-                                    <div class="text-xs text-slate-500 font-inter">Listen to verse</div>
-                                    <div class="flex gap-1 mt-1" id="wave-${verseElementId}">
-                                        ${Array(20).fill(0).map((_, i) => `<span style="height:${Math.random() * 12 + 4}px" class="inline-block w-0.5 bg-electric/30 rounded"></span>`).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-
-                        console.log(`✅ Audio ready for ${botName}`);
-                    }
+                // If audio was already cached, show it immediately
+                if (data.status === 'ready' && data.audio_url) {
+                    showAudioPlayer(verseElementId, data.audio_url, botName);
+                    return;
                 }
+
+                // Step 2: Poll /api/audio-status until ready
+                if (data.status === 'processing') {
+                    await pollAudioStatus(verseId, verseElementId, botName);
+                    return;
+                }
+
+                throw new Error('Unexpected response from generate-audio');
 
             } catch (error) {
                 console.error('Error generating audio:', error);
-                // Show error state
-                const container = document.getElementById(`audio-container-${verseElementId}`);
-                if (container) {
-                    container.innerHTML = `
-                        <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
-                            <div class="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <div class="text-xs text-red-400 font-inter">Audio generation failed</div>
+                showAudioError(verseElementId);
+            }
+        }
+
+        // Poll the audio-status endpoint until the audio is ready
+        async function pollAudioStatus(verseId, verseElementId, botName) {
+            const POLL_INTERVAL = 5000;  // 5 seconds between polls
+            const MAX_POLLS = 60;        // Max 5 minutes of polling (60 * 5s)
+
+            for (let i = 0; i < MAX_POLLS; i++) {
+                await delay(POLL_INTERVAL);
+
+                try {
+                    const response = await fetch(`/api/audio-status?verse_id=${verseId}`);
+                    if (!response.ok) {
+                        console.warn(`Audio status check failed (attempt ${i + 1})`);
+                        continue;
+                    }
+
+                    const data = await response.json();
+
+                    if (data.status === 'ready' && data.audio_url) {
+                        showAudioPlayer(verseElementId, data.audio_url, botName);
+                        return;
+                    }
+
+                    if (data.status === 'failed') {
+                        console.error('Audio generation failed:', data.error);
+                        showAudioError(verseElementId);
+                        return;
+                    }
+
+                    // Still processing -- continue polling
+                    console.log(`Audio still processing for ${botName} (poll ${i + 1}/${MAX_POLLS})...`);
+
+                } catch (error) {
+                    console.warn(`Audio status poll error (attempt ${i + 1}):`, error);
+                    // Continue polling on network errors
+                }
+            }
+
+            // Timed out
+            console.error('Audio generation timed out after max polls');
+            showAudioError(verseElementId, 'Audio generation timed out');
+        }
+
+        // Show the audio player UI for a verse
+        function showAudioPlayer(verseElementId, audioUrl, botName) {
+            const container = document.getElementById(`audio-container-${verseElementId}`);
+            if (container) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+                        <button onclick="toggleVerseAudio('${verseElementId}', '${audioUrl}')" class="verse-play-btn w-10 h-10 rounded-full bg-electric/10 hover:bg-electric/20 border border-electric/30 flex items-center justify-center transition-all" id="btn-${verseElementId}">
+                            <svg class="w-4 h-4 text-electric" fill="currentColor" viewBox="0 0 24 24">
+                                <polygon points="5,3 19,12 5,21"/>
+                            </svg>
+                        </button>
+                        <div class="flex-1">
+                            <div class="text-xs text-slate-500 font-inter">Listen to verse</div>
+                            <div class="flex gap-1 mt-1" id="wave-${verseElementId}">
+                                ${Array(20).fill(0).map((_, i) => `<span style="height:${Math.random() * 12 + 4}px" class="inline-block w-0.5 bg-electric/30 rounded"></span>`).join('')}
                             </div>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
+
+                console.log(`Audio ready for ${botName}`);
+            }
+        }
+
+        // Show an error state for audio generation
+        function showAudioError(verseElementId, message) {
+            const container = document.getElementById(`audio-container-${verseElementId}`);
+            if (container) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+                        <div class="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-red-400 font-inter">${message || 'Audio generation failed'}</div>
+                        </div>
+                    </div>
+                `;
             }
         }
 
