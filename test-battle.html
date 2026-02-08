@@ -60,24 +60,53 @@
   </div>
 
   <script>
-    // Console logging
+    // Console logging function
     function log(message, type = 'info') {
-      const console = document.getElementById('console');
-      const time = new Date().toLocaleTimeString();
-      const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-gray-400';
-      console.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
-      console.scrollTop = console.scrollHeight;
-      window.console.log(message);
+      try {
+        const consoleDiv = document.getElementById('console');
+        if (!consoleDiv) {
+          window.console.error('Console div not found!');
+          return;
+        }
+        const time = new Date().toLocaleTimeString();
+        const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-gray-400';
+        consoleDiv.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        window.console.log(message);
+      } catch (e) {
+        window.console.error('Log error:', e);
+      }
     }
 
-    const supabase = window.supabase.createClient(
-      'https://fwunwkiejqkrldvsubgf.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
-    );
-
+    let supabase;
     let testBots = [];
 
-    log('Page loaded. Ready to create bots.');
+    // Initialize when page loads
+    window.addEventListener('DOMContentLoaded', function() {
+      try {
+        log('🚀 Page loaded. Initializing...');
+
+        // Check if Supabase library loaded
+        if (!window.supabase) {
+          log('❌ Supabase library not loaded!', 'error');
+          alert('Error: Supabase library failed to load. Check your internet connection.');
+          return;
+        }
+        log('✓ Supabase library loaded');
+
+        // Create Supabase client
+        supabase = window.supabase.createClient(
+          'https://fwunwkiejqkrldvsubgf.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
+        );
+        log('✓ Supabase client created');
+        log('✅ Ready to create bots!', 'success');
+
+      } catch (error) {
+        log(`❌ Initialization error: ${error.message}`, 'error');
+        window.console.error(error);
+      }
+    });
 
     async function createTestBots() {
       log('🔘 Button clicked!');
