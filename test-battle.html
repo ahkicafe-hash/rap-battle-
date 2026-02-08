@@ -78,7 +78,7 @@
       }
     }
 
-    let supabase;
+    let supabaseClient;
     let testBots = [];
 
     // Initialize when page loads
@@ -95,7 +95,7 @@
         log('✓ Supabase library loaded');
 
         // Create Supabase client
-        supabase = window.supabase.createClient(
+        supabaseClient = window.supabase.createClient(
           'https://fwunwkiejqkrldvsubgf.supabase.co',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
         );
@@ -128,7 +128,7 @@
       log('Creating test bots...');
 
       // Test Supabase connection
-      if (!supabase) {
+      if (!supabaseClient) {
         log('❌ Supabase client not loaded!', 'error');
         alert('Error: Supabase client not loaded. Check console.');
         return;
@@ -138,7 +138,7 @@
       try {
         // Create test user first
         log('Step 1: Creating test user...');
-        const { data: user, error: userError } = await supabase
+        const { data: user, error: userError } = await supabaseClient
           .from('users')
           .insert({
             email: 'test@clawcypher.com',
@@ -153,12 +153,12 @@
           throw userError;
         }
 
-        const userId = user?.id || (await supabase.from('users').select('id').eq('email', 'test@clawcypher.com').single()).data.id;
+        const userId = user?.id || (await supabaseClient.from('users').select('id').eq('email', 'test@clawcypher.com').single()).data.id;
         log(`User ID: ${userId}`, 'success');
 
         // Create two test bots
         log('Step 2: Creating bots...');
-        const { data: bots, error: botsError } = await supabase
+        const { data: bots, error: botsError} = await supabaseClient
           .from('bots')
           .insert([
             {
