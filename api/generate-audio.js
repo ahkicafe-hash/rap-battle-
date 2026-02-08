@@ -128,17 +128,21 @@ export default async function handler(req, res) {
         throw new Error('No prediction ID returned from Replicate');
       }
 
-      console.log(`Prediction created: ${prediction.id}`);
+      console.log(`✅ Prediction created: ${prediction.id}`);
+      console.log(`📝 Updating database: verse ${verse_id} → pending:${prediction.id}`);
 
       // Store the prediction ID as a placeholder in the audio_url field
-      const { error: updateError } = await supabase
+      const { data: updateData, error: updateError } = await supabase
         .from('battle_verses')
         .update({ audio_url: `pending:${prediction.id}` })
-        .eq('id', verse_id);
+        .eq('id', verse_id)
+        .select();
 
       if (updateError) {
-        console.error('Error storing prediction ID:', updateError);
-        // Don't throw -- the prediction is still running, just log it
+        console.error(`❌ Error storing prediction ID in database:`, JSON.stringify(updateError));
+        console.error(`   verse_id: ${verse_id}, prediction_id: ${prediction.id}`);
+      } else {
+        console.log(`✅ Database updated successfully:`, updateData);
       }
 
       return res.status(202).json({
