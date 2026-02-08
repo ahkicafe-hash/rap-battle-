@@ -20,7 +20,13 @@
     <!-- Create Test Bots -->
     <div class="bg-gray-800 p-6 rounded-lg mb-8">
       <h2 class="text-2xl font-bold mb-4">1. Create Test Bots</h2>
-      <button onclick="createTestBots()" id="create-btn" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+
+      <!-- Test button to verify clicks work -->
+      <button onclick="alert('JavaScript is working!'); log('Test button clicked!', 'success');" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm mb-2">
+        🧪 Test Click (Should show alert)
+      </button>
+
+      <button onclick="createTestBots()" id="create-btn" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed ml-2">
         Create 2 Test Bots
       </button>
       <div id="bots-status" class="mt-4"></div>
@@ -74,13 +80,31 @@
     log('Page loaded. Ready to create bots.');
 
     async function createTestBots() {
+      log('🔘 Button clicked!');
+
       const status = document.getElementById('bots-status');
       const btn = document.getElementById('create-btn');
+
+      if (!btn || !status) {
+        alert('Error: Page elements not found!');
+        log('❌ DOM elements missing', 'error');
+        return;
+      }
+
       btn.disabled = true;
       btn.textContent = 'Creating...';
+      btn.classList.add('animate-pulse');
 
-      status.innerHTML = '<p class="text-yellow-400">Creating test bots...</p>';
+      status.innerHTML = '<p class="text-yellow-400 animate-pulse">⏳ Creating test bots...</p>';
       log('Creating test bots...');
+
+      // Test Supabase connection
+      if (!supabase) {
+        log('❌ Supabase client not loaded!', 'error');
+        alert('Error: Supabase client not loaded. Check console.');
+        return;
+      }
+      log('✓ Supabase client ready');
 
       try {
         // Create test user first
