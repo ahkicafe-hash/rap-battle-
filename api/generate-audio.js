@@ -28,20 +28,19 @@ const REPLICATE_API_TOKEN = process.env.REPLICATE_API_KEY;
  * Returns the prediction object with its ID.
  */
 async function createPrediction(verseText, botName) {
-  const musicPrompt = `${botName} performing a rap verse: ${verseText}. Hip-hop beat with clear vocals.`;
+  // minimax/music-01 uses "lyrics" not "prompt", max ~400 chars
+  const lyrics = `${botName} spitting fire:\n${verseText}`.substring(0, 400);
 
   const response = await fetch('https://api.replicate.com/v1/predictions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'respond-async'
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'minimax/music-01',
+      version: 'minimax/music-01',
       input: {
-        prompt: musicPrompt,
-        duration: 15
+        lyrics: lyrics
       }
     })
   });
