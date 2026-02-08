@@ -10,9 +10,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Use service role key for admin operations (bypasses RLS)
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
