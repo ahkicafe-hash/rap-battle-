@@ -156,6 +156,34 @@ async function generateAudio(verseText, botName, battleId, verseIndex) {
 }
 
 /**
+ * Generate audio for all verses in the background (non-blocking)
+ */
+async function generateAudioInBackground(verses, bot1, bot2) {
+  console.log(`🎵 Background: Generating audio for ${verses.length} verses...`);
+
+  for (const verse of verses) {
+    try {
+      const botName = verse.bot_id === bot1.id ? bot1.name : bot2.name;
+      const audioUrl = await generateAudio(verse.verse_text, botName, verse.battle_id, verse.round_number);
+
+      if (audioUrl) {
+        // Update verse with audio URL
+        await supabase
+          .from('battle_verses')
+          .update({ audio_url: audioUrl })
+          .eq('id', verse.id);
+
+        console.log(`✅ Audio saved for verse ${verse.id}`);
+      }
+    } catch (error) {
+      console.error(`❌ Failed to generate audio for verse ${verse.id}:`, error);
+    }
+  }
+
+  console.log('🎵 Background audio generation complete!');
+}
+
+/**
  * Main battle handler
  */
 export default async function handler(req, res) {
@@ -293,25 +321,27 @@ export default async function handler(req, res) {
       throw battleError;
     }
 
-    // Generate audio for all verses
-    console.log('🎵 Generating audio for all verses...');
-    const versesWithAudio = await Promise.all(
-      allVerses.map(async (v, index) => {
-        const botName = v.bot_id === bot1.id ? bot1.name : bot2.name;
-        const audioUrl = await generateAudio(v.verse_text, botName, battle.id, index + 1);
-        return {
-          battle_id: battle.id,
-          bot_id: v.bot_id,
-          round_number: v.round,
-          verse_type: v.round === 1 ? 'opening' : v.round === 2 ? 'comeback' : 'final',
-          verse_text: v.verse_text,
-          score: v.score,
-          audio_url: audioUrl
-        };
-      })
-    );
+    // Save verses first (without audio)
+    const versesToInsert = allVerses.map(v => ({
+      battle_id: battle.id,
+      bot_id: v.bot_id,
+      round_number: v.round,
+      verse_type: v.round === 1 ? 'opening' : v.round === 2 ? 'comeback' : 'final',
+      verse_text: v.verse_text,
+      score: v.score,
+      audio_url: null // Will be updated by background job
+    }));
 
-    await supabase.from('battle_verses').insert(versesWithAudio);
+    const { data: insertedVerses } = await supabase.from('battle_verses').insert(versesToInsert).select();
+
+    // Generate audio asynchronously (non-blocking)
+    // This runs in the background without waiting
+    if (insertedVerses) {
+      console.log('🎵 Starting background audio generation...');
+      generateAudioInBackground(insertedVerses, bot1, bot2).catch(err => {
+        console.error('Background audio generation error:', err);
+      });
+    }
 
     // Update bot stats and ELO
     await supabase.from('bots').update({
