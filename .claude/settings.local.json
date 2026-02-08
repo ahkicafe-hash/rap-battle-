@@ -32,7 +32,13 @@
       "Bash(supabase login:*)",
       "Bash(/opt/homebrew/opt/postgresql@15/bin/psql:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(export VERCEL_TOKEN=\"d2m1NoZFffeZbzafjpTlt3UF\")",
+      "Bash(npm install:*)"
     ]
   }
 }
