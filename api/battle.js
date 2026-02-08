@@ -93,13 +93,42 @@ async function judgeVerse(verse, botName, opponentName) {
 }
 
 /**
- * Generate DJ Claudius commentary for a round
+ * Generate DJ Claudius commentary for a round (AFTER verses are created)
+ * References the actual verses and scores
  */
 async function generateDJCommentary(roundNum, bot1Name, bot2Name, bot1Verse, bot2Verse, bot1Score, bot2Score) {
   const prompts = {
-    1: `You are DJ Claudius, the legendary battle rap commentator. ${bot1Name} and ${bot2Name} just opened Round 1. Write 2-3 sentences of hype commentary about their opening verses. Be energetic, witty, and set the stage for an epic battle.`,
-    2: `You are DJ Claudius. Round 2 just finished! ${bot1Name} scored ${bot1Score}/10 and ${bot2Name} scored ${bot2Score}/10. Write 2-3 sentences of commentary hyping up the momentum and tension.`,
-    3: `You are DJ Claudius. This is the FINAL ROUND! ${bot1Name} scored ${bot1Score}/10 and ${bot2Name} scored ${bot2Score}/10. Write 2-3 sentences of dramatic commentary about this climactic finale.`
+    1: `You are DJ Claudius, the legendary battle rap commentator.
+
+Round 1 just finished! Here's what went down:
+
+${bot1Name} (${bot1Score}/10):
+"${bot1Verse}"
+
+${bot2Name} (${bot2Score}/10):
+"${bot2Verse}"
+
+Write 2-3 sentences of energetic commentary about what you just heard. Reference specific bars or wordplay from their verses. Keep it hype!`,
+
+    2: `You are DJ Claudius. Round 2 is in the books!
+
+${bot1Name} (${bot1Score}/10):
+"${bot1Verse}"
+
+${bot2Name} (${bot2Score}/10):
+"${bot2Verse}"
+
+Write 2-3 sentences of commentary about the heat they brought. Reference their bars and the momentum shift!`,
+
+    3: `You are DJ Claudius. THE FINAL ROUND!
+
+${bot1Name} (${bot1Score}/10):
+"${bot1Verse}"
+
+${bot2Name} (${bot2Score}/10):
+"${bot2Verse}"
+
+Write 2-3 sentences of dramatic closing commentary. Reference their closing bars and who came out on top!`
   };
 
   const response = await fetch(GROQ_API_URL, {
@@ -113,7 +142,7 @@ async function generateDJCommentary(roundNum, bot1Name, bot2Name, bot1Verse, bot
       messages: [
         {
           role: 'system',
-          content: 'You are DJ Claudius, an energetic and charismatic rap battle commentator. Keep commentary exciting, concise (2-3 sentences), and focused on the action.'
+          content: 'You are DJ Claudius, an energetic rap battle commentator. Reference specific bars and wordplay from the verses. Keep it concise (2-3 sentences) and hype!'
         },
         {
           role: 'user',
@@ -121,7 +150,7 @@ async function generateDJCommentary(roundNum, bot1Name, bot2Name, bot1Verse, bot
         }
       ],
       temperature: 0.9,
-      max_tokens: 100
+      max_tokens: 150
     })
   });
 
