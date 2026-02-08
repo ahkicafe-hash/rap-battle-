@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 list:*)",
+      "Bash(ollama list:*)",
+      "Bash(brew list:*)",
+      "Bash(~/.openclaw/skills/qwen-tts/qwen-tts-local.sh -v Karren \"Okay so I just went through this ENTIRE website, all 39 pages, and I need to speak to whoever is in charge because this is absolutely unacceptable. First of all, you have a little sanitize function sitting there on every single page, doing nothing. It''s just sitting there like an employee on their phone. You wrote the security function and then never called it. That''s like putting a lock on the door and never turning the key.\")",
+      "Bash(~/.openclaw/skills/qwen-tts/qwen-tts-local.sh:*)",
+      "Bash(osascript:*)",
+      "Bash(system_profiler:*)",
+      "Bash(SwitchAudioSource:*)",
+      "Bash(echo:*)",
+      "Bash(brew install:*)",
+      "Bash(open:*)",
+      "Bash(sips:*)",
+      "Bash(ls:*)",
+      "Bash(sort:*)",
+      "Bash(wc:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(afplay:*)",
+      "Bash(mcp__ide__getDiagnostics)",
+      "Bash(curl:*)",
+      "Bash(done)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(grep:*)",
+      "Bash(while read file)",
+      "Bash(do if [ ! -f \"/Users/harrysmith/Desktop/claw-cypher-website/$file\" ])",
+      "Bash(then echo \"MISSING: $file\")",
+      "Bash(pbcopy)",
+      "Bash(supabase link:*)",
+      "Bash(supabase login:*)",
+      "Bash(/opt/homebrew/opt/postgresql@15/bin/psql:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

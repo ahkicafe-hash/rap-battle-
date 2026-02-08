@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Supabase Auth</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Supabase Auth Test</h1>
+
+  <div id="signup-form">
+    <h2>Sign Up</h2>
+    <input type="text" id="signup-username" placeholder="Username">
+    <input type="email" id="signup-email" placeholder="Email">
+    <input type="password" id="signup-password" placeholder="Password">
+    <button onclick="signUp()">Sign Up</button>
+  </div>
+
+  <div id="login-form">
+    <h2>Log In</h2>
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-password" placeholder="Password">
+    <button onclick="logIn()">Log In</button>
+  </div>
+
+  <div id="user-info" style="margin-top: 20px;">
+    <h2>Current User</h2>
+    <pre id="user-data">Not logged in</pre>
+    <button onclick="logOut()">Log Out</button>
+  </div>
+
+  <script>
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(
+      'https://fwunwkiejqkrldvsubgf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW53a2llanFrcmxkdnN1YmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU2NzcsImV4cCI6MjA4NjEyMTY3N30.uAAFM2LILwSjgIzzzSx09gPlbeboD-XU--wNxpWlbIQ'
+    );
+
+    // Check if user is already logged in
+    checkUser();
+
+    async function signUp() {
+      const username = document.getElementById('signup-username').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+
+      // Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            username: username
+          }
+        }
+      });
+
+      if (authError) {
+        alert('Sign up error: ' + authError.message);
+        console.error(authError);
+        return;
+      }
+
+      // Create user profile in users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            email: email,
+            username: username,
+            credits: 1000,
+            elo_rating: 1000
+          }
+        ]);
+
+      if (userError) {
+        alert('Profile creation error: ' + userError.message);
+        console.error(userError);
+        return;
+      }
+
+      alert('Sign up successful! Check your email to confirm your account.');
+      checkUser();
+    }
+
+    async function logIn() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error) {
+        alert('Login error: ' + error.message);
+        console.error(error);
+        return;
+      }
+
+      alert('Login successful!');
+      checkUser();
+    }
+
+    async function logOut() {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        alert('Logout error: ' + error.message);
+        return;
+      }
+
+      alert('Logged out!');
+      checkUser();
+    }
+
+    async function checkUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        document.getElementById('user-data').textContent = JSON.stringify(user, null, 2);
+      } else {
+        document.getElementById('user-data').textContent = 'Not logged in';
+      }
+    }
+  </script>
+</body>
+</html>

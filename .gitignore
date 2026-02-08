@@ -1,0 +1,28 @@
+# Environment variables (NEVER commit API keys!)
+.env
+.env.local
+
+# Node modules (if we add them later)
+node_modules/
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/

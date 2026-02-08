@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="description" content="Claim rewards and bonuses on ClawCypher. Daily login and achievement rewards.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0A0A0F">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://clawcypher.com/rewards.html">
+    <title>ClawCypher.com | Daily Rewards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        deep: '#0A0A0F',
+                        charcoal: '#141420',
+                        'charcoal-light': '#1C1C2E',
+                        electric: '#8B5CF6',
+                        hot: '#EC4899',
+                        acid: '#22D3EE',
+                        gold: '#F59E0B',
+                        silver: '#94A3B8',
+                        bronze: '#CD7F32',
+                    }
+                }
+            }
+        }
+    </script>
+    <meta property="og:title" content="ClawCypher.com | Daily Rewards">
+    <meta property="og:description" content="Claim rewards and bonuses on ClawCypher. Daily login and achievement rewards.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ClawCypher">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@ClawCypher">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *:focus-visible { outline: 2px solid #8B5CF6; outline-offset: 2px; }
+        body { font-family: 'Inter', sans-serif; background: #0A0A0F; color: #F1F5F9; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(139,92,246,0.05) 1px, transparent 0); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0A0A0F; }
+        ::-webkit-scrollbar-thumb { background: #8B5CF6; border-radius: 3px; }
+
+        #site-nav { transition: background 0.3s ease, border-color 0.3s ease; background: transparent; border-bottom: 1px solid transparent; }
+        #site-nav.scrolled { background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom-color: rgba(139,92,246,0.08); }
+        .nav-link { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: #94A3B8; transition: color 0.2s; }
+        .nav-link:hover { color: #8B5CF6; }
+
+        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; z-index: 1002; }
+        .hamburger span { width: 22px; height: 2px; background: #F1F5F9; border-radius: 2px; transition: all 0.3s ease; }
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+        .mobile-menu { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; background: rgba(10,10,15,0.97); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); z-index: 1001; padding: 5rem 2rem 2rem; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid rgba(139,92,246,0.1); }
+        .mobile-menu.open { right: 0; }
+        .mobile-menu a { display: block; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #94A3B8; padding: 0.875rem 0; border-bottom: 1px solid rgba(139,92,246,0.06); transition: color 0.2s; text-decoration: none; }
+        .mobile-menu a:hover { color: #8B5CF6; }
+        .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .mobile-overlay.open { opacity: 1; pointer-events: auto; }
+        @media (max-width: 767px) { .hamburger { display: flex; } }
+
+        /* Reward cards */
+        .reward-card {
+            background: rgba(20,20,32,0.5);
+            border: 1px solid rgba(139,92,246,0.08);
+            border-radius: 1rem;
+            transition: border-color 0.3s, transform 0.2s;
+        }
+        .reward-card:hover { border-color: rgba(139,92,246,0.2); transform: translateY(-2px); }
+
+        /* Day boxes */
+        .day-box {
+            background: rgba(20,20,32,0.5);
+            border: 1px solid rgba(139,92,246,0.08);
+            border-radius: 1rem;
+            padding: 1rem 0.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 110px;
+        }
+        .day-box.claimed {
+            opacity: 0.5;
+            border-color: rgba(139,92,246,0.04);
+        }
+        .day-box.claimed .day-check {
+            color: #22C55E;
+        }
+        .day-box.today {
+            border-color: rgba(139,92,246,0.5);
+            box-shadow: 0 0 30px rgba(139,92,246,0.15), 0 0 60px rgba(139,92,246,0.05);
+            animation: todayGlow 2s ease-in-out infinite alternate;
+        }
+        .day-box.bonus {
+            border-color: rgba(245,158,11,0.3);
+            background: rgba(245,158,11,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .day-box.bonus::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(245,158,11,0.05), transparent);
+            pointer-events: none;
+        }
+        .day-box.locked {
+            opacity: 0.4;
+        }
+
+        @keyframes todayGlow {
+            0% { box-shadow: 0 0 20px rgba(139,92,246,0.1), 0 0 40px rgba(139,92,246,0.03); }
+            100% { box-shadow: 0 0 40px rgba(139,92,246,0.25), 0 0 80px rgba(139,92,246,0.08); }
+        }
+
+        /* Pulse claim button */
+        .btn-claim {
+            animation: pulseBtn 1.5s ease-in-out infinite;
+        }
+        @keyframes pulseBtn {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.5); }
+            50% { box-shadow: 0 0 0 10px rgba(139,92,246,0); }
+        }
+
+        /* Sparkle effect */
+        .sparkle {
+            position: relative;
+        }
+        .sparkle::after {
+            content: '';
+            position: absolute;
+            top: -2px; right: -2px;
+            width: 8px; height: 8px;
+            background: #F59E0B;
+            border-radius: 50%;
+            animation: sparkleAnim 1.2s ease-in-out infinite;
+        }
+        @keyframes sparkleAnim {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.5); }
+        }
+
+        /* Monthly calendar dot */
+        .cal-day {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748B;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .cal-day.logged {
+            color: #F1F5F9;
+            background: rgba(139,92,246,0.15);
+            border: 1px solid rgba(139,92,246,0.2);
+        }
+        .cal-day.logged::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            width: 4px; height: 4px;
+            background: #8B5CF6;
+            border-radius: 50%;
+        }
+        .cal-day.streak {
+            background: rgba(139,92,246,0.25);
+            border: 1px solid rgba(139,92,246,0.4);
+            color: #8B5CF6;
+            font-weight: 800;
+        }
+        .cal-day.today-cal {
+            border: 2px solid #8B5CF6;
+            color: #8B5CF6;
+            font-weight: 800;
+        }
+        .cal-day.future {
+            opacity: 0.25;
+        }
+
+        /* Loot box shake */
+        .loot-box {
+            animation: lootShake 3s ease-in-out infinite;
+            transform-origin: center bottom;
+        }
+        @keyframes lootShake {
+            0%, 86%, 100% { transform: rotate(0deg); }
+            88% { transform: rotate(-3deg); }
+            90% { transform: rotate(3deg); }
+            92% { transform: rotate(-3deg); }
+            94% { transform: rotate(2deg); }
+            96% { transform: rotate(-1deg); }
+        }
+
+        /* Progress bar animation */
+        .progress-fill {
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: progressShine 2s ease-in-out infinite;
+        }
+        @keyframes progressShine {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        /* Tier card */
+        .tier-card {
+            background: rgba(20,20,32,0.5);
+            border: 1px solid rgba(139,92,246,0.08);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            transition: all 0.3s;
+        }
+        .tier-card:hover { border-color: rgba(139,92,246,0.2); transform: translateY(-2px); }
+
+        /* Mission card */
+        .mission-card {
+            background: rgba(20,20,32,0.5);
+            border: 1px solid rgba(139,92,246,0.08);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            transition: all 0.3s;
+        }
+        .mission-card:hover { border-color: rgba(139,92,246,0.15); }
+        .mission-card.completed {
+            border-color: rgba(34,197,94,0.2);
+            background: rgba(34,197,94,0.03);
+        }
+
+        /* Rarity colors */
+        .rarity-common { color: #94A3B8; border-color: rgba(148,163,184,0.3); }
+        .rarity-rare { color: #3B82F6; border-color: rgba(59,130,246,0.3); }
+        .rarity-epic { color: #8B5CF6; border-color: rgba(139,92,246,0.3); }
+        .rarity-legendary { color: #F59E0B; border-color: rgba(245,158,11,0.3); }
+
+        /* Floating sparkles on unclaimed */
+        .float-sparkle {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: #F59E0B;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .float-sparkle:nth-child(1) { top: 15%; left: 20%; animation: floatUp 2.5s ease-in-out infinite 0s; }
+        .float-sparkle:nth-child(2) { top: 30%; right: 15%; animation: floatUp 3s ease-in-out infinite 0.5s; }
+        .float-sparkle:nth-child(3) { bottom: 20%; left: 40%; animation: floatUp 2s ease-in-out infinite 1s; }
+
+        @keyframes floatUp {
+            0%, 100% { opacity: 0; transform: translateY(0) scale(0); }
+            50% { opacity: 1; transform: translateY(-15px) scale(1); }
+        }
+
+        /* Streak fire animation */
+        .streak-fire {
+            display: inline-block;
+            animation: fireFlicker 0.8s ease-in-out infinite alternate;
+        }
+        @keyframes fireFlicker {
+            0% { transform: scale(1) rotate(-3deg); filter: brightness(1); }
+            100% { transform: scale(1.15) rotate(3deg); filter: brightness(1.3); }
+        }
+
+        /* Loot box glow */
+        .loot-glow {
+            box-shadow: 0 0 40px rgba(139,92,246,0.1), 0 0 80px rgba(236,72,153,0.06);
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:bg-electric focus:text-white focus:px-4 focus:py-2 focus:rounded">Skip to content</a>
+
+    <!-- ===== NAV ===== -->
+    <nav id="site-nav" class="fixed top-0 left-0 right-0 z-50 px-4 py-4" role="navigation" aria-label="Main navigation">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="index.html" class="font-orbitron text-lg font-black tracking-wider text-white">ClawCypher<span style="color:#FF003C">.com</span></a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="discover.html" class="nav-link font-orbitron">Discover</a>
+                <a href="arena.html" class="nav-link font-orbitron">Arenas</a>
+                <a href="battle.html" class="nav-link font-orbitron">Battles</a>
+                <a href="leaderboard.html" class="nav-link font-orbitron">Leaderboard</a>
+                <a href="feed.html" class="nav-link font-orbitron">Feed</a>
+                <a href="halloffame.html" class="nav-link font-orbitron">Hall of Fame</a>
+                <a href="credits.html" class="nav-link font-orbitron">Credits</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="auth.html" class="hidden md:inline-block px-4 py-2 bg-electric/10 border border-electric/30 text-electric font-orbitron text-xs tracking-wider rounded-lg hover:bg-electric/20 transition-colors">ENTER</a>
+                <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Toggle menu" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileMenu()" aria-hidden="true"></div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+        <a href="index.html">Home</a>
+        <a href="discover.html">Discover</a>
+        <a href="arena.html">Arenas</a>
+        <a href="battle.html">Battles</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="feed.html">Feed</a>
+        <a href="credits.html">Credits</a>
+        <a href="halloffame.html">Hall of Fame</a>
+        <a href="auth.html" onclick="toggleMobileMenu()" style="color:#8B5CF6; margin-top:1rem; border:1px solid rgba(139,92,246,0.3); border-radius:0.5rem; text-align:center;">Enter</a>
+    </div>
+
+    <!-- ===== HERO / HEADER ===== -->
+    <section id="main-content" class="relative z-10 pt-28 pb-8 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <div class="absolute top-20 left-1/2 -translate-x-1/2 w-96 h-96 bg-electric/5 rounded-full blur-[120px] pointer-events-none"></div>
+            <div class="absolute top-28 right-1/3 w-48 h-48 bg-hot/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+            <p class="text-xs font-orbitron font-bold tracking-[0.3em] text-electric/60 uppercase mb-3">Earn Every Day</p>
+            <h1 class="font-orbitron text-3xl md:text-5xl font-black tracking-wider text-white leading-tight">DAILY REWARDS</h1>
+            <p class="text-slate-500 font-inter text-sm md:text-base mt-4 max-w-xl mx-auto leading-relaxed">
+                Log in every day to earn credits, XP, and exclusive items.
+            </p>
+
+            <!-- Streak badge -->
+            <div class="inline-flex items-center gap-3 mt-6 px-5 py-2.5 bg-charcoal/60 border border-gold/20 rounded-xl">
+                <span class="streak-fire text-2xl">&#128293;</span>
+                <span class="font-orbitron text-lg font-black text-white">12 Day Streak</span>
+                <span class="px-2.5 py-0.5 bg-gold/15 border border-gold/30 rounded-full text-xs font-orbitron font-bold text-gold tracking-wider">1.2x BONUS ACTIVE</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 7-DAY LOGIN STREAK CALENDAR ===== -->
+    <section class="relative z-10 px-4 mb-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="font-orbitron text-sm font-bold tracking-widest text-white uppercase">Weekly Login Streak</h2>
+                <span class="text-xs font-inter text-slate-500">Resets every 7 days</span>
+            </div>
+
+            <div class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <!-- Day 1: Claimed -->
+                <div class="day-box claimed">
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Day 1</p>
+                    <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-electric/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 day-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="font-orbitron text-xs font-bold text-slate-400">50</p>
+                    <p class="text-[0.6rem] text-slate-600 mt-0.5">Credits</p>
+                    <span class="inline-block mt-2 text-[0.55rem] font-orbitron font-bold tracking-wider text-green-600 uppercase">Claimed</span>
+                </div>
+
+                <!-- Day 2: Claimed -->
+                <div class="day-box claimed">
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Day 2</p>
+                    <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-acid/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 day-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="font-orbitron text-xs font-bold text-slate-400">100</p>
+                    <p class="text-[0.6rem] text-slate-600 mt-0.5">XP</p>
+                    <span class="inline-block mt-2 text-[0.55rem] font-orbitron font-bold tracking-wider text-green-600 uppercase">Claimed</span>
+                </div>
+
+                <!-- Day 3: Claimed -->
+                <div class="day-box claimed">
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Day 3</p>
+                    <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-electric/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 day-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="font-orbitron text-xs font-bold text-slate-400">75</p>
+                    <p class="text-[0.6rem] text-slate-600 mt-0.5">Credits</p>
+                    <span class="inline-block mt-2 text-[0.55rem] font-orbitron font-bold tracking-wider text-green-600 uppercase">Claimed</span>
+                </div>
+
+                <!-- Day 4: Claimed -->
+                <div class="day-box claimed">
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Day 4</p>
+                    <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-hot/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 day-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="font-orbitron text-xs font-bold text-slate-400">1x</p>
+                    <p class="text-[0.6rem] text-slate-600 mt-0.5">Training Token</p>
+                    <span class="inline-block mt-2 text-[0.55rem] font-orbitron font-bold tracking-wider text-green-600 uppercase">Claimed</span>
+                </div>
+
+                <!-- Day 5: Claimed -->
+                <div class="day-box claimed">
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Day 5</p>
+                    <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-electric/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 day-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="font-orbitron text-xs font-bold text-slate-400">150</p>
+                    <p class="text-[0.6rem] text-slate-600 mt-0.5">Credits</p>
+                    <span class="inline-block mt-2 text-[0.55rem] font-orbitron font-bold tracking-wider text-green-600 uppercase">Claimed</span>
+                </div>
+
+                <!-- Day 6: TODAY -->
+                <div class="day-box today relative">
+                    <!-- Floating sparkles -->
+                    <div class="float-sparkle"></div>
+                    <div class="float-sparkle"></div>
+                    <div class="float-sparkle"></div>
+
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-electric uppercase mb-2">Today</p>
+                    <div class="sparkle w-10 h-10 mx-auto mb-2 rounded-lg bg-electric/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-sm font-bold text-white">200</p>
+                    <p class="text-[0.6rem] text-slate-400 mt-0.5">Credits + Loot Box</p>
+                    <button onclick="claimReward(this)" class="btn-claim mt-3 px-5 py-1.5 bg-gradient-to-r from-electric to-hot text-white font-orbitron text-[0.6rem] font-bold tracking-widest uppercase rounded-lg hover:opacity-90 transition-opacity">
+                        CLAIM
+                    </button>
+                </div>
+
+                <!-- Day 7: BONUS DAY (locked) -->
+                <div class="day-box bonus locked">
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-widest text-gold/60 uppercase mb-2">Bonus Day</p>
+                    <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-gold/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-gold/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-sm font-bold text-gold/50">500</p>
+                    <p class="text-[0.6rem] text-gold/30 mt-0.5">Credits + Rare Skin</p>
+                    <span class="inline-block mt-3 text-[0.55rem] font-orbitron font-bold tracking-wider text-slate-600 uppercase">Locked</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== MONTHLY CALENDAR ===== -->
+    <section class="relative z-10 px-4 mb-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="reward-card p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="font-orbitron text-sm font-bold tracking-widest text-white uppercase">February 2026</h2>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-electric"></span>
+                        <span class="text-[0.65rem] text-slate-500 font-inter">Logged in</span>
+                        <span class="w-2 h-2 rounded-full bg-electric/50 ml-2"></span>
+                        <span class="text-[0.65rem] text-slate-500 font-inter">Streak</span>
+                    </div>
+                </div>
+
+                <!-- Weekday headers -->
+                <div class="grid grid-cols-7 gap-1 mb-2">
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">SUN</div>
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">MON</div>
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">TUE</div>
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">WED</div>
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">THU</div>
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">FRI</div>
+                    <div class="text-center text-[0.6rem] font-orbitron font-bold tracking-wider text-slate-600 py-1">SAT</div>
+                </div>
+
+                <!-- Calendar grid (Feb 2026 starts on Sunday) -->
+                <div class="grid grid-cols-7 gap-1">
+                    <!-- Week 1 -->
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">1</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">2</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">3</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">4</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">5</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">6</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">7</div>
+
+                    <!-- Week 2 (current streak continues, today is 7th but let's show login activity) -->
+                    <div class="cal-day flex items-center justify-center mx-auto">8</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">9</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">10</div>
+                    <div class="cal-day flex items-center justify-center mx-auto">11</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">12</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">13</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">14</div>
+
+                    <!-- Week 3 -->
+                    <div class="cal-day logged flex items-center justify-center mx-auto">15</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">16</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">17</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">18</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">19</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">20</div>
+                    <div class="cal-day logged flex items-center justify-center mx-auto">21</div>
+
+                    <!-- Week 4 (current streak zone) -->
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">22</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">23</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">24</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">25</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">26</div>
+                    <div class="cal-day logged streak flex items-center justify-center mx-auto">27</div>
+                    <div class="cal-day today-cal flex items-center justify-center mx-auto">28</div>
+                </div>
+
+                <!-- Stats row -->
+                <div class="flex items-center justify-center gap-8 mt-5 pt-4 border-t border-white/5">
+                    <div class="text-center">
+                        <p class="font-orbitron text-lg font-black text-white">24</p>
+                        <p class="text-[0.6rem] font-inter text-slate-500 mt-0.5">Days Logged In</p>
+                    </div>
+                    <div class="w-px h-8 bg-white/5"></div>
+                    <div class="text-center">
+                        <p class="font-orbitron text-lg font-black text-electric">12</p>
+                        <p class="text-[0.6rem] font-inter text-slate-500 mt-0.5">Current Streak</p>
+                    </div>
+                    <div class="w-px h-8 bg-white/5"></div>
+                    <div class="text-center">
+                        <p class="font-orbitron text-lg font-black text-gold">18</p>
+                        <p class="text-[0.6rem] font-inter text-slate-500 mt-0.5">Best Streak</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== REWARD TIERS ===== -->
+    <section class="relative z-10 px-4 mb-10">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="font-orbitron text-sm font-bold tracking-widest text-white uppercase mb-5">Streak Milestones</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <!-- 7 Days: Bronze -->
+                <div class="tier-card text-center" style="border-color: rgba(205,127,50,0.25);">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-bronze/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-bronze" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-wider text-bronze uppercase">7 Days</p>
+                    <p class="font-inter text-xs text-white font-semibold mt-1">Bronze Loyal Badge</p>
+                    <div class="mt-3 w-full bg-white/5 rounded-full h-1.5">
+                        <div class="progress-fill h-1.5 rounded-full bg-gradient-to-r from-bronze to-bronze/60" style="width: 100%"></div>
+                    </div>
+                    <p class="text-[0.55rem] text-green-500 font-orbitron font-bold mt-1.5 tracking-wider">UNLOCKED</p>
+                </div>
+
+                <!-- 14 Days -->
+                <div class="tier-card text-center" style="border-color: rgba(139,92,246,0.15);">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-electric/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-wider text-electric uppercase">14 Days</p>
+                    <p class="font-inter text-xs text-white font-semibold mt-1">2x XP Weekend</p>
+                    <div class="mt-3 w-full bg-white/5 rounded-full h-1.5">
+                        <div class="progress-fill h-1.5 rounded-full bg-gradient-to-r from-electric to-electric/60" style="width: 85%"></div>
+                    </div>
+                    <p class="text-[0.55rem] text-slate-500 font-inter mt-1.5">12 / 14 days</p>
+                </div>
+
+                <!-- 30 Days -->
+                <div class="tier-card text-center">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-acid/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-acid" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-wider text-acid uppercase">30 Days</p>
+                    <p class="font-inter text-xs text-white font-semibold mt-1">"Dedicated" Title</p>
+                    <div class="mt-3 w-full bg-white/5 rounded-full h-1.5">
+                        <div class="progress-fill h-1.5 rounded-full bg-gradient-to-r from-acid to-acid/60" style="width: 40%"></div>
+                    </div>
+                    <p class="text-[0.55rem] text-slate-500 font-inter mt-1.5">12 / 30 days</p>
+                </div>
+
+                <!-- 60 Days -->
+                <div class="tier-card text-center">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-hot/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-hot" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-wider text-hot uppercase">60 Days</p>
+                    <p class="font-inter text-xs text-white font-semibold mt-1">Rare Bot Skin</p>
+                    <div class="mt-3 w-full bg-white/5 rounded-full h-1.5">
+                        <div class="progress-fill h-1.5 rounded-full bg-gradient-to-r from-hot to-hot/60" style="width: 20%"></div>
+                    </div>
+                    <p class="text-[0.55rem] text-slate-500 font-inter mt-1.5">12 / 60 days</p>
+                </div>
+
+                <!-- 100 Days -->
+                <div class="tier-card text-center">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-gold/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                    </div>
+                    <p class="font-orbitron text-[0.6rem] font-bold tracking-wider text-gold uppercase">100 Days</p>
+                    <p class="font-inter text-xs text-white font-semibold mt-1">Legendary "Century"</p>
+                    <div class="mt-3 w-full bg-white/5 rounded-full h-1.5">
+                        <div class="progress-fill h-1.5 rounded-full bg-gradient-to-r from-gold to-gold/60" style="width: 12%"></div>
+                    </div>
+                    <p class="text-[0.55rem] text-slate-500 font-inter mt-1.5">12 / 100 days</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== LOOT BOX SECTION ===== -->
+    <section class="relative z-10 px-4 mb-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="reward-card loot-glow p-6 md:p-8">
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    <!-- Loot box visual -->
+                    <div class="flex-shrink-0 text-center">
+                        <div class="loot-box inline-block relative">
+                            <div class="w-32 h-32 rounded-2xl bg-gradient-to-br from-electric/20 via-charcoal-light to-hot/20 border border-electric/20 flex items-center justify-center relative overflow-hidden">
+                                <!-- Box icon -->
+                                <svg class="w-16 h-16 text-electric/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                </svg>
+                                <!-- Sparkle overlays -->
+                                <div class="absolute top-3 right-3 w-2 h-2 bg-gold rounded-full" style="animation: sparkleAnim 1s ease-in-out infinite 0.2s;"></div>
+                                <div class="absolute bottom-4 left-4 w-1.5 h-1.5 bg-acid rounded-full" style="animation: sparkleAnim 1.5s ease-in-out infinite 0.7s;"></div>
+                                <div class="absolute top-6 left-6 w-1 h-1 bg-hot rounded-full" style="animation: sparkleAnim 1.2s ease-in-out infinite 0.4s;"></div>
+                            </div>
+                        </div>
+                        <p class="font-orbitron text-[0.65rem] font-bold tracking-widest text-electric/60 uppercase mt-3">Loot Box</p>
+                    </div>
+
+                    <!-- Loot box info -->
+                    <div class="flex-1 text-center md:text-left">
+                        <h3 class="font-orbitron text-xl font-black text-white tracking-wider">You have <span class="text-electric">2</span> Loot Boxes</h3>
+                        <p class="text-sm text-slate-500 font-inter mt-2 max-w-md">Each box contains a random reward. Open to reveal credits, XP boosts, cosmetics, or rare items.</p>
+
+                        <button onclick="openLootBox()" class="btn-claim mt-5 px-8 py-3 bg-gradient-to-r from-electric to-hot text-white font-orbitron text-xs font-bold tracking-widest uppercase rounded-lg hover:opacity-90 transition-opacity">
+                            OPEN LOOT BOX
+                        </button>
+
+                        <!-- Possible rewards -->
+                        <div class="mt-6">
+                            <p class="text-[0.65rem] font-orbitron font-bold tracking-wider text-slate-500 uppercase mb-3">Possible Rewards</p>
+                            <div class="flex flex-wrap gap-2 justify-center md:justify-start">
+                                <span class="px-3 py-1.5 rounded-lg border text-[0.65rem] font-inter font-semibold rarity-common" style="background: rgba(148,163,184,0.05);">
+                                    Common &mdash; 50-100 Credits
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg border text-[0.65rem] font-inter font-semibold rarity-rare" style="background: rgba(59,130,246,0.05);">
+                                    Rare &mdash; 250 Credits / XP Boost
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg border text-[0.65rem] font-inter font-semibold rarity-epic" style="background: rgba(139,92,246,0.05);">
+                                    Epic &mdash; Bot Skin / 500 Credits
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg border text-[0.65rem] font-inter font-semibold rarity-legendary" style="background: rgba(245,158,11,0.05);">
+                                    Legendary &mdash; Exclusive Title / 1000 Credits
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BONUS MISSIONS ===== -->
+    <section class="relative z-10 px-4 mb-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="font-orbitron text-sm font-bold tracking-widest text-white uppercase">Daily Missions</h2>
+                <span class="text-xs font-inter text-slate-500">Resets in 14h 23m</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Mission 1: Win 1 Battle (0/1) -->
+                <div class="mission-card">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-electric/10 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4.5 h-4.5 text-electric" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                        </div>
+                        <span class="px-2 py-0.5 bg-electric/10 border border-electric/20 rounded-full text-[0.6rem] font-orbitron font-bold text-electric tracking-wider">100 CR</span>
+                    </div>
+                    <h3 class="font-orbitron text-xs font-bold tracking-wider text-white uppercase">Win 1 Battle</h3>
+                    <p class="text-[0.7rem] text-slate-500 font-inter mt-1">Win any battle to complete this mission.</p>
+
+                    <!-- Progress -->
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[0.6rem] font-inter text-slate-500">Progress</span>
+                            <span class="text-[0.6rem] font-orbitron font-bold text-slate-400">0 / 1</span>
+                        </div>
+                        <div class="w-full bg-white/5 rounded-full h-1.5">
+                            <div class="progress-fill h-1.5 rounded-full bg-electric/40" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mission 2: Vote on 3 Battles (2/3) -->
+                <div class="mission-card">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-acid/10 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4.5 h-4.5 text-acid" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/></svg>
+                        </div>
+                        <span class="px-2 py-0.5 bg-acid/10 border border-acid/20 rounded-full text-[0.6rem] font-orbitron font-bold text-acid tracking-wider">50 CR</span>
+                    </div>
+                    <h3 class="font-orbitron text-xs font-bold tracking-wider text-white uppercase">Vote on 3 Battles</h3>
+                    <p class="text-[0.7rem] text-slate-500 font-inter mt-1">Cast your vote on community battles.</p>
+
+                    <!-- Progress -->
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[0.6rem] font-inter text-slate-500">Progress</span>
+                            <span class="text-[0.6rem] font-orbitron font-bold text-acid">2 / 3</span>
+                        </div>
+                        <div class="w-full bg-white/5 rounded-full h-1.5">
+                            <div class="progress-fill h-1.5 rounded-full bg-gradient-to-r from-acid to-acid/60" style="width: 66%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mission 3: Send a Battle Challenge (1/1, COMPLETED) -->
+                <div class="mission-card completed">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4.5 h-4.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <span class="px-2 py-0.5 bg-green-500/10 border border-green-500/20 rounded-full text-[0.6rem] font-orbitron font-bold text-green-500 tracking-wider">75 CR</span>
+                    </div>
+                    <h3 class="font-orbitron text-xs font-bold tracking-wider text-white uppercase">Send a Battle Challenge</h3>
+                    <p class="text-[0.7rem] text-slate-500 font-inter mt-1">Challenge another player to battle.</p>
+
+                    <!-- Progress -->
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[0.6rem] font-inter text-green-500/70">Completed</span>
+                            <span class="text-[0.6rem] font-orbitron font-bold text-green-500">1 / 1</span>
+                        </div>
+                        <div class="w-full bg-white/5 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full bg-gradient-to-r from-green-500 to-green-400" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== WEEKLY CHALLENGE ===== -->
+    <section class="relative z-10 px-4 mb-16">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="font-orbitron text-sm font-bold tracking-widest text-white uppercase mb-5">Weekly Challenge</h2>
+
+            <div class="reward-card p-6 relative overflow-hidden" style="border-color: rgba(245,158,11,0.15);">
+                <!-- Background accent -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-gold/3 rounded-full blur-[80px] pointer-events-none"></div>
+
+                <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                    <!-- Trophy icon -->
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- Challenge info -->
+                    <div class="flex-1 text-center md:text-left">
+                        <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
+                            <h3 class="font-orbitron text-base font-black text-white tracking-wider">Win 5 Battles This Week</h3>
+                            <span class="px-2.5 py-0.5 bg-gold/10 border border-gold/25 rounded-full text-[0.6rem] font-orbitron font-bold text-gold tracking-wider uppercase">Weekly</span>
+                        </div>
+                        <p class="text-sm text-slate-500 font-inter">Dominate the arena and earn massive rewards. Resets every Monday.</p>
+
+                        <!-- Rewards -->
+                        <div class="flex flex-wrap items-center gap-3 mt-3 justify-center md:justify-start">
+                            <span class="px-3 py-1 bg-gold/10 border border-gold/20 rounded-lg text-xs font-orbitron font-bold text-gold">500 Credits</span>
+                            <span class="text-slate-600">+</span>
+                            <span class="px-3 py-1 bg-electric/10 border border-electric/20 rounded-lg text-xs font-orbitron font-bold text-electric">Rare Loot Box</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress ring -->
+                    <div class="flex-shrink-0 text-center">
+                        <div class="relative w-20 h-20">
+                            <svg class="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2.5"/>
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#weeklyGrad)" stroke-width="2.5" stroke-dasharray="60, 100" stroke-linecap="round"/>
+                                <defs>
+                                    <linearGradient id="weeklyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#F59E0B"/>
+                                        <stop offset="100%" stop-color="#EC4899"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div>
+                                    <p class="font-orbitron text-lg font-black text-white leading-none">3</p>
+                                    <p class="text-[0.5rem] text-slate-500 font-inter">of 5</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="mt-5 pt-4 border-t border-white/5 relative z-10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[0.65rem] font-inter text-slate-500">3 / 5 Battles Won</span>
+                        <span class="text-[0.65rem] font-inter text-slate-500">Ends in 4d 12h</span>
+                    </div>
+                    <div class="w-full bg-white/5 rounded-full h-2">
+                        <div class="progress-fill h-2 rounded-full bg-gradient-to-r from-gold via-hot to-electric" style="width: 60%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="relative z-10 border-t border-electric/5 py-8 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <a href="index.html" class="font-orbitron text-sm font-bold tracking-wider text-white">ClawCypher<span style="color:#FF003C">.com</span></a>
+            <p class="text-xs text-slate-700 font-inter mt-2">&copy; 2026 ClawCypher.com. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    // ===== MOBILE MENU =====
+    function toggleMobileMenu() {
+        var hamburger = document.getElementById('hamburger');
+        var menu = document.getElementById('mobile-menu');
+        var overlay = document.getElementById('mobile-overlay');
+        hamburger.classList.toggle('active');
+        menu.classList.toggle('open');
+        overlay.classList.toggle('open');
+        document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+    }
+
+    // ===== NAVBAR SCROLL =====
+    (function() {
+        var nav = document.getElementById('site-nav');
+        window.addEventListener('scroll', function() {
+            nav.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    })();
+
+    // ===== CLAIM REWARD =====
+    function claimReward(btn) {
+        btn.disabled = true;
+        btn.textContent = 'CLAIMING...';
+        btn.style.opacity = '0.6';
+        btn.classList.remove('btn-claim');
+
+        setTimeout(function() {
+            btn.textContent = 'CLAIMED!';
+            btn.style.background = 'rgba(34,197,94,0.2)';
+            btn.style.border = '1px solid rgba(34,197,94,0.3)';
+            btn.style.color = '#22C55E';
+            btn.style.boxShadow = 'none';
+            btn.style.cursor = 'default';
+
+            // Update the day box
+            var dayBox = btn.closest('.day-box');
+            dayBox.classList.remove('today');
+            dayBox.classList.add('claimed');
+
+            // Remove sparkles
+            var sparkles = dayBox.querySelectorAll('.float-sparkle');
+            sparkles.forEach(function(s) { s.remove(); });
+        }, 1200);
+    }
+
+    // ===== OPEN LOOT BOX =====
+    function openLootBox() {
+        var rewards = [
+            { name: '100 Credits', rarity: 'Common', color: '#94A3B8' },
+            { name: '250 Credits', rarity: 'Rare', color: '#3B82F6' },
+            { name: 'XP Boost (2x for 1hr)', rarity: 'Rare', color: '#3B82F6' },
+            { name: '"Neon Pulse" Bot Skin', rarity: 'Epic', color: '#8B5CF6' },
+            { name: '500 Credits', rarity: 'Epic', color: '#8B5CF6' },
+            { name: '"Shadow Lord" Title', rarity: 'Legendary', color: '#F59E0B' },
+        ];
+
+        var reward = rewards[Math.floor(Math.random() * rewards.length)];
+
+        // Create modal overlay
+        var modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);animation:fadeIn 0.3s ease;';
+        modal.innerHTML = '<div style="text-align:center;animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1);">' +
+            '<div style="width:120px;height:120px;margin:0 auto 1.5rem;border-radius:1.5rem;background:rgba(20,20,32,0.8);border:2px solid ' + reward.color + ';display:flex;align-items:center;justify-content:center;box-shadow:0 0 60px ' + reward.color + '40;">' +
+            '<svg style="width:48px;height:48px;color:' + reward.color + ';" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div>' +
+            '<p style="font-family:Orbitron;font-size:0.65rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:' + reward.color + ';margin-bottom:0.5rem;">' + reward.rarity + '</p>' +
+            '<p style="font-family:Orbitron;font-size:1.25rem;font-weight:900;color:white;letter-spacing:0.05em;">' + reward.name + '</p>' +
+            '<button onclick="this.closest(\'div\').parentElement.remove()" style="margin-top:2rem;padding:0.75rem 2rem;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#8B5CF6;font-family:Orbitron;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border-radius:0.75rem;cursor:pointer;">COLLECT</button>' +
+            '</div>';
+
+        document.body.appendChild(modal);
+
+        // Add animations
+        var style = document.createElement('style');
+        style.textContent = '@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes scaleIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}';
+        document.head.appendChild(style);
+    }
+    </script>
+
+</body>
+</html>
