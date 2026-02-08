@@ -38,7 +38,7 @@ async function createPrediction(verseText, botName) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      version: 'minimax/music-01',
+      model: 'minimax/music-01',
       input: {
         lyrics: lyrics
       }
